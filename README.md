@@ -118,4 +118,22 @@ add the following line:
 
 `services.AddDbContext<BlazorCmsContext>(options => options.UseSqlite("Data Source=BlazorCMS.db"));`;
 
+Let's install the dotnet Entity Framework CLI: `dotnet tool install --global dotnet-ef`.
+We will also need the `Microsoft.EntityFrameworkCore.Design` package for the CLI to work in this project.
 
+`dotnet add package Microsoft.EntityFrameworkCore.Design`
+
+Now we can create our initial database migration. Note that you should **always** double-check your migrations to avoid losing data.
+This should be a simple migration that creates your `Articles` and `Sections` tables, and creates a foreign key relationship from `Articles` to `Sections`.
+
+Let's now configure our application to automatically run migrations on startup. Add the following snippet to the `Startup.Configure` method:
+
+```c#
+using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
+{
+    using (var dbContext = serviceScope.ServiceProvider.GetService<BlazorCmsContext>())
+    {
+        dbContext.Database.Migrate();
+    }
+}
+```

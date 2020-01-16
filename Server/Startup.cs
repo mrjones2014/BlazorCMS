@@ -46,6 +46,14 @@ namespace BlazorCMS.Server
                 endpoints.MapDefaultControllerRoute();
                 endpoints.MapFallbackToClientSideBlazor<Client.Startup>("index.html");
             });
+
+            using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            {
+                using (var dbContext = serviceScope.ServiceProvider.GetService<BlazorCmsContext>())
+                {
+                    dbContext.Database.Migrate();
+                }
+            }
         }
     }
 }
