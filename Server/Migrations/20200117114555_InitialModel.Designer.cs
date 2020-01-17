@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorCMS.Server.Migrations
 {
     [DbContext(typeof(BlazorCmsContext))]
-    [Migration("20200116202536_InitialModel")]
+    [Migration("20200117114555_InitialModel")]
     partial class InitialModel
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -17,7 +17,7 @@ namespace BlazorCMS.Server.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "3.1.1");
 
-            modelBuilder.Entity("BlazorCMS.Server.Data.Models.Article", b =>
+            modelBuilder.Entity("BlazorCMS.Shared.Models.Article", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -39,7 +39,7 @@ namespace BlazorCMS.Server.Migrations
                     b.ToTable("Articles");
                 });
 
-            modelBuilder.Entity("BlazorCMS.Server.Data.Models.Section", b =>
+            modelBuilder.Entity("BlazorCMS.Shared.Models.Section", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -53,9 +53,9 @@ namespace BlazorCMS.Server.Migrations
                     b.ToTable("Sections");
                 });
 
-            modelBuilder.Entity("BlazorCMS.Server.Data.Models.Article", b =>
+            modelBuilder.Entity("BlazorCMS.Shared.Models.Article", b =>
                 {
-                    b.HasOne("BlazorCMS.Server.Data.Models.Section", "Section")
+                    b.HasOne("BlazorCMS.Shared.Models.Section", "Section")
                         .WithMany("Articles")
                         .HasForeignKey("SectionId")
                         .OnDelete(DeleteBehavior.Cascade)

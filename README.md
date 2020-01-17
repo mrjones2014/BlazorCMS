@@ -22,11 +22,11 @@ Let's add some data. For this, we'll use Entity Framework Core with a Sqlite dat
 
 `dotnet add package Microsoft.EntityFrameworkCore.Sqlite`;
 
-Let's add some models. In this project, we'll have `Section`s and `Article`s. Add these models under `Server/Data/Models`. We'll also use a base `Entity` class that will add our Primary key for us.
+Let's add some models. In this project, we'll have `Section`s and `Article`s. Add these models under `Shared/Models`. We'll also use a base `Entity` class that will add our Primary key for us.
 
 `Entity.cs`
 ```c#
-namespace BlazorCMS.Server.Data.Models
+namespace BlazorCMS.Shared.Models
 {
     public class Entity
     {
@@ -43,7 +43,7 @@ namespace BlazorCMS.Server.Data.Models
 ```c#
 using System.Collections.Generic;
 
-namespace BlazorCMS.Server.Data.Models
+namespace BlazorCMS.Shared.Models
 {
     public class Section : Entity
     {
@@ -64,7 +64,7 @@ namespace BlazorCMS.Server.Data.Models
 
 `Article.cs`
 ```c#
-namespace BlazorCMS.Server.Data.Models
+namespace BlazorCMS.Shared.Models
 {
     public class Article : Entity
     {
@@ -88,7 +88,7 @@ namespace BlazorCMS.Server.Data.Models
 Now, let's add a `DatabaseContext`. Add a `BlazorCmsContext` under `Server/Data/`.
 
 ```c#
-using BlazorCMS.Server.Data.Models;
+using BlazorCMS.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlazorCMS.Server.Data

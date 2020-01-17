@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Shared\BlazorCMS.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Migrations" />
+  </ItemGroup>
+
 </Project>

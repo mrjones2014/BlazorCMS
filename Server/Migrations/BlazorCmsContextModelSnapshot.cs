@@ -15,7 +15,7 @@ namespace BlazorCMS.Server.Migrations
             modelBuilder
                 .HasAnnotation("ProductVersion", "3.1.1");
 
-            modelBuilder.Entity("BlazorCMS.Server.Data.Models.Article", b =>
+            modelBuilder.Entity("BlazorCMS.Shared.Models.Article", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -37,7 +37,7 @@ namespace BlazorCMS.Server.Migrations
                     b.ToTable("Articles");
                 });
 
-            modelBuilder.Entity("BlazorCMS.Server.Data.Models.Section", b =>
+            modelBuilder.Entity("BlazorCMS.Shared.Models.Section", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -51,9 +51,9 @@ namespace BlazorCMS.Server.Migrations
                     b.ToTable("Sections");
                 });
 
-            modelBuilder.Entity("BlazorCMS.Server.Data.Models.Article", b =>
+            modelBuilder.Entity("BlazorCMS.Shared.Models.Article", b =>
                 {
-                    b.HasOne("BlazorCMS.Server.Data.Models.Section", "Section")
+                    b.HasOne("BlazorCMS.Shared.Models.Section", "Section")
                         .WithMany("Articles")
                         .HasForeignKey("SectionId")
                         .OnDelete(DeleteBehavior.Cascade)
