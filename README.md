@@ -137,3 +137,108 @@ using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceSco
     }
 }
 ```
+
+Now let's create some conductors for our entities. Create a new .NET Core class library project called "BlazorCMS.Conductors".
+
+`dotnet new classlib -o Conductors`
+
+In the Conductors project, let's create some base conductors so that we can share our create/read/update/delete logic between the
+conductors for each of our entities. We'll create a `CreateConductor`, `UpdateConductor`, `DeleteConductor and `ReadConductor`. Each of these
+conductors will be using a `Repository`, which we'll need to build first.
+
+In your `Conductors` class, create a new directory called `Interfaces`. In here, we'll write an interface for our repository
+and each of our base conductor types, so that we can register them for dependency injection.
+
+Add a project reference to the `Shared` project so we can access our model classes, and add the following interfaces to this
+directory:
+
+`IResult.cs`:
+```c#
+using System.Collections.Generic;
+using BlazorCMS.Shared.Models;
+
+namespace BlazorCMS.Conductors.Interfaces
+{
+    public interface IResult<T> where T : Entity
+    {
+        int                 ErrorCount   { get; }
+        IEnumerable<string> Errors       { get; set; }
+        bool                HasErrors    { get; }
+        T                   ResultObject { get; set; }
+    }
+}
+```
+
+`IRepository.cs`
+```c#
+using System;
+using System.Linq.Expressions;
+using BlazorCMS.Shared.Models;
+
+namespace BlazorCMS.Conductors.Interfaces
+{
+    public interface IRepository<T> where T : Entity
+    {
+        IResult<T> Create(T                          item);
+        IResult<T> Delete(long                       id);
+        IResult<T> FindAll(Expression<Func<T, bool>> filterExpression);
+        IResult<T> FindById(long                     id);
+        IResult<T> Update(T                          item);
+    }
+}
+```
+
+`IRepositoryCreateConductor.cs`
+```c#
+using BlazorCMS.Shared.Models;
+
+namespace BlazorCMS.Conductors.Interfaces
+{
+    public interface IRepositoryCreateConductor<T> where T : Entity
+    {
+        IResult<T> Create(T item);
+    }
+}
+```
+
+`IRepositoryReadConductor.cs`
+```c#
+using System;
+using System.Linq.Expressions;
+using BlazorCMS.Shared.Models;
+
+namespace BlazorCMS.Conductors.Interfaces
+{
+    public interface IRepositoryReadConductor<T> where T : Entity
+    {
+        IResult<T> FindAll(Expression<Func<T, bool>> filterExpression);
+        IResult<T> FindById(long                     id);
+    }
+}
+```
+
+`IRepositoryUpdateConductor.cs`
+```c#
+using BlazorCMS.Shared.Models;
+
+namespace BlazorCMS.Conductors.Interfaces
+{
+    public interface IRepositoryUpdateConductor<T> where T : Entity
+    {
+        IResult<T> Update(T item);
+    }
+}
+```
+
+`IRepositoryDeleteConductor.cs`
+```c#
+using BlazorCMS.Shared.Models;
+
+namespace BlazorCMS.Conductors.Interfaces
+{
+    public interface IRepositoryDeleteConductor<T> where T : Entity
+    {
+        IResult<T> Delete(long id);
+    }
+}
+```
