@@ -12,7 +12,7 @@ namespace BlazorCMS.Server.Migrations
                 {
                     Id = table.Column<long>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Name = table.Column<string>(nullable: true)
+                    Name = table.Column<string>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -25,8 +25,8 @@ namespace BlazorCMS.Server.Migrations
                 {
                     Id = table.Column<long>(nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    Title = table.Column<string>(nullable: true),
-                    Body = table.Column<string>(nullable: true),
+                    Title = table.Column<string>(nullable: false),
+                    Body = table.Column<string>(nullable: false),
                     SectionId = table.Column<long>(nullable: false)
                 },
                 constraints: table =>

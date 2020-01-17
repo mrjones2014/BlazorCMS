@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using AndcultureCode.CSharp.Core.Models.Entities;
 
 namespace BlazorCMS.Server.Data.Models
@@ -7,6 +8,7 @@ namespace BlazorCMS.Server.Data.Models
     {
         #region Properties
 
+        [Required(AllowEmptyStrings = false)]
         public string Name { get; set; }
 
         #endregion Properties
