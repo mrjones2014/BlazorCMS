@@ -22,16 +22,14 @@ Let's add some data. For this, we'll use Entity Framework Core with a Sqlite dat
 
 `dotnet add package Microsoft.EntityFrameworkCore.Sqlite`;
 
-Let's add some models. In this project, we'll have `Section`s and `Article`s. Add these models in the `Shared` project under a `Models` directory.
+Let's add some models. In this project, we'll have `Section`s and `Article`s. Add these models in the `Server` project under a `Data/Models` directory.
 We'll also use an andculture open-source project, AndcultureCode.CSharp.Conductors, in this project:
 
 `dotnet add package AndcultureCode.CSharp.Conductors` 
 
 `Section.cs`
 ```c#
-using System.Collections.Generic;
-
-namespace BlazorCMS.Shared.Models
+namespace BlazorCMS.Server.Data.Models
 {
     public class Section : Entity
     {
@@ -52,7 +50,7 @@ namespace BlazorCMS.Shared.Models
 
 `Article.cs`
 ```c#
-namespace BlazorCMS.Shared.Models
+namespace BlazorCMS.Server.Data.Models
 {
     public class Article : Entity
     {
@@ -76,9 +74,6 @@ namespace BlazorCMS.Shared.Models
 Now, let's add a `DatabaseContext`. Add a `BlazorCmsContext` under `Server/Data/`.
 
 ```c#
-using BlazorCMS.Shared.Models;
-using Microsoft.EntityFrameworkCore;
-
 namespace BlazorCMS.Server.Data
 {
     public class BlazorCmsContext : DbContext
@@ -139,4 +134,248 @@ services.AddScoped<IRepositoryCreateConductor<Article>, RepositoryCreateConducto
 services.AddScoped<IRepositoryReadConductor<Article>,   RepositoryReadConductor<Article>>();
 services.AddScoped<IRepositoryUpdateConductor<Article>, RepositoryUpdateConductor<Article>>();
 services.AddScoped<IRepositoryDeleteConductor<Article>, RepositoryDeleteConductor<Article>>();
+```
+
+For our controllers, we'll need DTOs (Data Transfer Objects) to send our models to the client. Add these in the `Shared` project
+so that they can be used directly on the client as well. Add your DTOs under a `Dtos` directory.
+
+Now let's build a controller for each of our entities. Add your controllers in the `Server` project, under the `Controllers` directory.
+
+`EntityDto.cs`
+```c#
+namespace BlazorCMS.Shared.Dtos
+{
+    public class EntityDto
+    {
+        public long Id { get; set; }
+    }
+}
+```
+
+`SectionDto.cs`
+```c#
+namespace BlazorCMS.Shared.Dtos
+{
+    public class SectionDto : EntityDto
+    {
+        public string Name { get; set; }
+    }
+}
+```
+
+`ArticleDto.cs`
+```c#
+namespace BlazorCMS.Shared.Dtos
+{
+    public class ArticleDto : EntityDto
+    {
+        public string Title     { get; set; }
+        public string Body      { get; set; }
+        public long   SectionId { get; set; }
+    }
+}
+```
+
+We'll use the AutoMapper package to automatically map our models to our DTOs. Add this package to your `Server` project.
+
+`dotnet add package AutoMapper`
+
+Now we can configure our `AutoMapper` in the `ConfigureServices` method of `Startup.cs`:
+
+```c#
+var autoMapperConfig = new MapperConfiguration(config =>
+{
+    config.CreateMap<Section, SectionDto>();
+    config.CreateMap<Article, ArticleDto>();
+});
+IMapper mapper = autoMapperConfig.CreateMapper();
+services.AddSingleton<IMapper>(mapper);
+```
+
+Now that `AutoMapper` is set up, we can use it in the controllers we'll add under `Server/Controllers`:
+
+`BaseController.cs`
+```c#
+namespace BlazorCMS.Server.Controllers
+{
+    public class BaseController : Controller
+    {
+        #region Public Utility Methods
+
+        /// <summary>
+        /// Create a result object given the value and errors list
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="errors"></param>
+        /// <returns></returns>
+        public IResult<T> CreateResult<T>(T value, IEnumerable<IError> errors)
+        {
+            var result = new Result<T>()
+            {
+                Errors       = errors?.ToList(),
+                ResultObject = value
+            };
+            return result;
+        }
+
+        public OkObjectResult Ok<T>(T value, IEnumerable<IError> errors)
+        {
+            return base.Ok(CreateResult(value, errors));
+        }
+
+        public NotFoundObjectResult NotFound<T>(T value, IEnumerable<IError> errors)
+        {
+            return base.NotFound(CreateResult(value, errors));
+        }
+
+        protected BadRequestObjectResult BadRequest<T>(T value, IEnumerable<IError> errors)
+        {
+            return base.BadRequest(CreateResult(value, errors));
+        }
+
+        public ObjectResult InternalError<T>(T value, IEnumerable<IError> errors)
+        {
+            return StatusCode(500, CreateResult(value, errors));
+        }
+
+        #endregion Public Utility Methods
+    }
+}
+```
+
+`SectionsController.cs`
+```c#
+namespace BlazorCMS.Server.Controllers
+{
+    [FormatFilter]
+    [ResponseCache(CacheProfileName = "Never")]
+    [Route("/api/sections")]
+    public class SectionsController : BaseController
+    {
+        #region Properties
+
+        private readonly IRepositoryCreateConductor<Section> _createConductor;
+        private readonly IRepositoryDeleteConductor<Section> _deleteConductor;
+        private readonly IRepositoryReadConductor<Section>   _readConductor;
+        private readonly IRepositoryUpdateConductor<Section> _updateConductor;
+        private readonly IMapper                             _mapper;
+
+        #endregion Properties
+
+        #region Constructor
+
+        public SectionsController(
+            IRepositoryCreateConductor<Section> createConductor,
+            IRepositoryDeleteConductor<Section> deleteConductor,
+            IRepositoryReadConductor<Section>   readConductor,
+            IRepositoryUpdateConductor<Section> updateConductor,
+            IMapper                             mapper
+        )
+        {
+            _createConductor = createConductor;
+            _deleteConductor = deleteConductor;
+            _readConductor   = readConductor;
+            _updateConductor = updateConductor;
+            _mapper          = mapper;
+        }
+
+        #endregion Constructor
+
+        #region POST
+
+        [HttpPost]
+        public IActionResult Post([FromBody] SectionDto section)
+        {
+            var newSection = new Section
+            {
+                Name = section.Name
+            };
+            var createResult = _createConductor.Create(newSection);
+            if (createResult.HasErrors)
+            {
+                return InternalError<SectionDto>(null, createResult.Errors);
+            }
+
+            return Ok(_mapper.Map<SectionDto>(createResult.ResultObject), null);
+        }
+
+        #endregion POST
+
+        #region PATCH
+
+        [HttpPatch]
+        public IActionResult Patch([FromBody] SectionDto section)
+        {
+            var getResult = _readConductor.FindById(section.Id);
+            if (getResult.HasErrorsOrResultIsNull())
+            {
+                return NotFound(false, getResult.Errors);
+            }
+
+            var updatedSection  = getResult.ResultObject;
+            updatedSection.Name = section.Name;
+
+            var updateResult = _updateConductor.Update(updatedSection);
+            if (updateResult.HasErrors)
+            {
+                return InternalError(updateResult.ResultObject, updateResult.Errors);
+            }
+
+            return Ok(true, null);
+        }
+
+        #endregion PATCH
+
+        #region GET
+
+        [HttpGet]
+        public IActionResult Index()
+        {
+            var getResult = _readConductor.FindAll();
+            if (getResult.HasErrorsOrResultIsNull())
+            {
+                return InternalError<IEnumerable<SectionDto>>(null, getResult.Errors);
+            }
+
+            return Ok<IEnumerable<SectionDto>>(getResult.ResultObject.Select(e => _mapper.Map<SectionDto>(e)), null);
+        }
+
+        [HttpGet("{id:long}")]
+        public IActionResult Get(long id)
+        {
+            var getResult = _readConductor.FindById(id);
+            if (getResult.HasErrorsOrResultIsNull())
+            {
+                return InternalError<SectionDto>(null, getResult.Errors);
+            }
+
+            return Ok(_mapper.Map<SectionDto>(getResult.ResultObject), null);
+        }
+
+        #endregion GET
+
+        #region DELETE
+
+        /// <summary>
+        /// Deleting a section will automatically delete all the articles because of our foreign key constraint
+        /// and delete behavior in our database
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpDelete("{id:long}")]
+        public IActionResult Delete(long id)
+        {
+            var deleteResult = _deleteConductor.Delete(id: id, soft: false);
+            if (deleteResult.HasErrors)
+            {
+                return InternalError(deleteResult.ResultObject, deleteResult.Errors);
+            }
+
+            return Ok(deleteResult.ResultObject, null);
+        }
+
+        #endregion DELETE
+    }
+}
 ```

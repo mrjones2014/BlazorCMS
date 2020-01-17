@@ -1,6 +1,6 @@
 using AndcultureCode.CSharp.Core.Models.Entities;
 
-namespace BlazorCMS.Shared.Models
+namespace BlazorCMS.Server.Data.Models
 {
     public class Article : Entity
     {

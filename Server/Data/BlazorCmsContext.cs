@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using BlazorCMS.Shared.Models;
+using BlazorCMS.Server.Data.Models;
 
 namespace BlazorCMS.Server.Data
 {
