@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AndcultureCode.CSharp.Core.Models.Entities;
 
 namespace BlazorCMS.Shared.Models
 {

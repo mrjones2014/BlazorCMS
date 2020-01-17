@@ -1,3 +1,5 @@
+using AndcultureCode.CSharp.Core.Models.Entities;
+
 namespace BlazorCMS.Shared.Models
 {
     public class Article : Entity

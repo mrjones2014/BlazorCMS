@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using AndcultureCode.CSharp.Conductors;
+using AndcultureCode.CSharp.Core.Interfaces.Conductors;
 using BlazorCMS.Server.Data;
+using BlazorCMS.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace BlazorCMS.Server
@@ -23,6 +26,16 @@ namespace BlazorCMS.Server
             });
 
             services.AddDbContext<BlazorCmsContext>(options => options.UseSqlite("Data Source=BlazorCMS.db"));
+
+            services.AddScoped<IRepositoryCreateConductor<Section>, RepositoryCreateConductor<Section>>();
+            services.AddScoped<IRepositoryReadConductor<Section>,   RepositoryReadConductor<Section>>();
+            services.AddScoped<IRepositoryUpdateConductor<Section>, RepositoryUpdateConductor<Section>>();
+            services.AddScoped<IRepositoryDeleteConductor<Section>, RepositoryDeleteConductor<Section>>();
+
+            services.AddScoped<IRepositoryCreateConductor<Article>, RepositoryCreateConductor<Article>>();
+            services.AddScoped<IRepositoryReadConductor<Article>,   RepositoryReadConductor<Article>>();
+            services.AddScoped<IRepositoryUpdateConductor<Article>, RepositoryUpdateConductor<Article>>();
+            services.AddScoped<IRepositoryDeleteConductor<Article>, RepositoryDeleteConductor<Article>>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
