@@ -602,3 +602,35 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     }
 }
 ```
+
+Now, you should be able to run the app (`dotnet run` in the `Server` directory), and navigate to `http://localhost:5000/api/sections` and see a JSON response
+containing our seeded `Section`. Now that our API is done, we can start building the frontend.
+
+Let's add the `Blazor-State` package to the `Client` project.
+
+`dotnet add package Blazor-State`
+
+Let's add our state object now. In a new `State` directory, add the following file:
+
+`ClientState.cs`
+```c#
+namespace BlazorCMS.Client.Shared
+{
+    public class ClientState
+    {
+        public List<SectionDto> Sections { get; set; }
+        public List<ArticleDto> Articles { get; set; }
+
+        public ClientState()
+        {
+            Sections = new List<SectionDto>();
+            Articles = new List<ArticleDto>();
+        }
+
+        public List<ArticleDto> GetArticlesBySectionId(long sectionId)
+        {
+            return Articles?.Where(e => e.SectionId == sectionId)?.ToList();
+        }
+    }
+}
+```
