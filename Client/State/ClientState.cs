@@ -1,23 +1,27 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using BlazorCMS.Shared.Dtos;
+using BlazorState;
 
-namespace BlazorCMS.Client.Shared
+namespace BlazorCMS.Client.State
 {
-    public class ClientState
+    public class ClientState : IState
     {
         public List<SectionDto> Sections { get; set; }
         public List<ArticleDto> Articles { get; set; }
-
-        public ClientState()
-        {
-            Sections = new List<SectionDto>();
-            Articles = new List<ArticleDto>();
-        }
 
         public List<ArticleDto> GetArticlesBySectionId(long sectionId)
         {
             return Articles?.Where(e => e.SectionId == sectionId)?.ToList();
         }
+
+        public void Initialize()
+        {
+            Sections = new List<SectionDto>();
+            Articles = new List<ArticleDto>();
+        }
+
+        public Guid Guid { get; }
     }
 }

@@ -614,23 +614,84 @@ Let's add our state object now. In a new `State` directory, add the following fi
 
 `ClientState.cs`
 ```c#
-namespace BlazorCMS.Client.Shared
+namespace BlazorCMS.Client.State
 {
-    public class ClientState
+    public class ClientState : IState
     {
         public List<SectionDto> Sections { get; set; }
         public List<ArticleDto> Articles { get; set; }
-
-        public ClientState()
-        {
-            Sections = new List<SectionDto>();
-            Articles = new List<ArticleDto>();
-        }
 
         public List<ArticleDto> GetArticlesBySectionId(long sectionId)
         {
             return Articles?.Where(e => e.SectionId == sectionId)?.ToList();
         }
+
+        public void Initialize()
+        {
+            Sections = new List<SectionDto>();
+            Articles = new List<ArticleDto>();
+        }
+
+        public Guid Guid { get; }
     }
 }
 ```
+
+Now we'll need an HTTP client to implement client side services.
+
+`dotnet add package Microsoft.AspNetCore.Blazor.HttpClient`
+
+Now add a service class under a new `Services`.
+
+`SectionService.cs`
+```c#
+namespace BlazorCMS.Client.Services
+{
+    public class SectionService
+    {
+        private static HttpClient client = new HttpClient();
+
+        public static async Task<IResult<SectionDto[]>> Index()
+        {
+            return await client.GetJsonAsync<IResult<SectionDto[]>>("/api/sections");
+        }
+    }
+}
+```
+
+Now modify the `NavMenu.razor` to index and show the available sections in the sidebar.
+
+```razor
+@foreach (var section in Sections)
+{
+    <li class="nav-item px-3">
+        <NavLink class="nav-link" href="@section.Id">
+            <span class="oi oi-plus" aria-hidden="true"></span> @section.Name
+        </NavLink>
+    </li>
+}
+...
+@code {
+List<SectionDto> Sections => GetSections();
+
+    private List<SectionDto> GetSections()
+    {
+        return Store.GetState<ClientState>().Sections;
+    }
+
+    private async Task LoadSections()
+    {
+        var result = await SectionService.Index();
+        var state = Store.GetState<ClientState>();
+        state.Sections = result.ResultObject?.ToList() ?? new List<SectionDto>();
+        Store.SetState(state);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSections();
+    }
+}
+```
+
+Now, if you run the app, you should see the "Hello World!" seeded section appear on the sidebar!

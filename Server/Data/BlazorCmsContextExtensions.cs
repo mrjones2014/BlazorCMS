@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using BlazorCMS.Server.Data.Models;
 
 namespace BlazorCMS.Server.Data
@@ -7,6 +8,10 @@ namespace BlazorCMS.Server.Data
     {
         public static void SeedHelloWorldSectionAndArticle(this BlazorCmsContext context)
         {
+            if (context.Sections.Any())
+            {
+                return;
+            }
             var section = new Section
             {
                 Name     = "Hello World!",
