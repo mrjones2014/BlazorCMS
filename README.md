@@ -35,6 +35,7 @@ namespace BlazorCMS.Server.Data.Models
     {
         #region Properties
 
+        [Required(AllowEmptyStrings = false)]
         public string Name { get; set; }
 
         #endregion Properties
@@ -56,8 +57,11 @@ namespace BlazorCMS.Server.Data.Models
     {
         #region Properties
 
+        [Required(AllowEmptyStrings = false)]
         public string Title     { get; set; }
+        [Required(AllowEmptyStrings = false)]
         public string Body      { get; set; }
+        [Required]
         public long   SectionId { get; set; }
 
         #endregion Properties
@@ -121,10 +125,20 @@ using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceSco
 }
 ```
 
+You'll also need to implement a concrete implementation of `IRepository<T>`, and register it in dependency injection by adding the following lines
+to `Startup.cs` in the `ConfigureServices` method:
+
+```c#
+services.AddScoped<IRepository<Section>, Repository<Section>>();
+services.AddScoped<IRepository<Article>, Repository<Article>>();
+```
+
 Alright, now let's get some conductors for each of our entities into dependency injection. In `Startup.cs`, in the `ConfigureServices` method,
 add the following lines:
 
 ```c#
+
+
 services.AddScoped<IRepositoryCreateConductor<Section>, RepositoryCreateConductor<Section>>();
 services.AddScoped<IRepositoryReadConductor<Section>,   RepositoryReadConductor<Section>>();
 services.AddScoped<IRepositoryUpdateConductor<Section>, RepositoryUpdateConductor<Section>>();
@@ -249,7 +263,6 @@ namespace BlazorCMS.Server.Controllers
 namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
-    [ResponseCache(CacheProfileName = "Never")]
     [Route("/api/sections")]
     public class SectionsController : BaseController
     {
@@ -376,6 +389,216 @@ namespace BlazorCMS.Server.Controllers
         }
 
         #endregion DELETE
+    }
+}
+```
+
+`ArticlesController.cs`
+```c#
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using AndcultureCode.CSharp.Core.Extensions;
+using AndcultureCode.CSharp.Core.Interfaces.Conductors;
+using AutoMapper;
+using BlazorCMS.Server.Data.Models;
+using BlazorCMS.Shared.Dtos;
+using Microsoft.AspNetCore.Mvc;
+
+namespace BlazorCMS.Server.Controllers
+{
+    [FormatFilter]
+    [Route("/api/{sectionId:long}/articles")]
+    public class ArticlesController : BaseController
+    {
+        #region Properties
+
+        private readonly IRepositoryCreateConductor<Article> _createConductor;
+        private readonly IRepositoryDeleteConductor<Article> _deleteConductor;
+        private readonly IRepositoryReadConductor<Article>   _readConductor;
+        private readonly IRepositoryUpdateConductor<Article> _updateConductor;
+        private readonly IMapper                             _mapper;
+
+        #endregion Properties
+
+        #region Constructor
+
+        public ArticlesController(
+            IRepositoryCreateConductor<Article> createConductor,
+            IRepositoryDeleteConductor<Article> deleteConductor,
+            IRepositoryReadConductor<Article>   readConductor,
+            IRepositoryUpdateConductor<Article> updateConductor,
+            IMapper                             mapper
+        )
+        {
+            _createConductor = createConductor;
+            _deleteConductor = deleteConductor;
+            _readConductor   = readConductor;
+            _updateConductor = updateConductor;
+            _mapper          = mapper;
+        }
+
+        #endregion Constructor
+
+        #region POST
+
+        [HttpPost]
+        public IActionResult Post([FromBody] ArticleDto article)
+        {
+            var newArticle = new Article
+            {
+                Title     = article.Title,
+                Body      = article.Body,
+                SectionId = article.SectionId
+            };
+            var createResult = _createConductor.Create(newArticle);
+            if (createResult.HasErrors)
+            {
+                return InternalError<ArticleDto>(null, createResult.Errors);
+            }
+
+            return Ok(createResult.ResultObject, null);
+        }
+
+        #endregion POST
+
+        #region PATCH
+
+        [HttpPatch]
+        public IActionResult Patch([FromBody] ArticleDto article)
+        {
+            var getResult = _readConductor.FindById(article.Id);
+            if (getResult.HasErrorsOrResultIsNull())
+            {
+                return NotFound(false, getResult.Errors);
+            }
+
+            var updatedArticle   = getResult.ResultObject;
+            updatedArticle.Title = article.Title;
+            updatedArticle.Body  = article.Body;
+
+            var updateResult = _updateConductor.Update(updatedArticle);
+            if (updateResult.HasErrors)
+            {
+                return InternalError(updateResult.ResultObject, updateResult.Errors);
+            }
+
+            return Ok(true, null);
+        }
+
+        #endregion PATCH
+
+        #region GET
+
+        [HttpGet]
+        public IActionResult Index([FromRoute] long sectionId)
+        {
+            Expression<Func<Article, bool>> filter = e => e.SectionId == sectionId;
+            var findResult                         = _readConductor.FindAll(filter);
+
+            if (findResult.HasErrorsOrResultIsNull())
+            {
+                return NotFound<IEnumerable<ArticleDto>>(null, findResult.Errors);
+            }
+
+            return Ok<IEnumerable<ArticleDto>>(findResult.ResultObject.Select(e => _mapper.Map<ArticleDto>(e)), null);
+        }
+
+        [HttpGet("{id:long}")]
+        public IActionResult Get([FromRoute] long sectionId, [FromRoute] long id)
+        {
+            var findResult = _readConductor.FindById(id);
+            if (findResult.HasErrorsOrResultIsNull())
+            {
+                return NotFound<ArticleDto>(null, findResult.Errors);
+            }
+
+            return Ok(_mapper.Map<ArticleDto>(findResult.ResultObject), null);
+        }
+
+        #endregion GET
+
+        #region DELETE
+
+        [HttpDelete("{id:long}")]
+        public IActionResult Delete([FromRoute] long sectionId, [FromRoute] long id)
+        {
+            var deleteResult = _deleteConductor.Delete(id: id, soft: false);
+            if (deleteResult.HasErrorsOrResultIsNull())
+            {
+                return InternalError(false, deleteResult.Errors);
+            }
+
+            return Ok(deleteResult.ResultObject, deleteResult.Errors);
+        }
+
+        #endregion DELETE
+    }
+}
+```
+
+Now, let's seed some data, so we can test our API. Add a class called `BlazorCmsContextExtensions` under the `Data` directory.
+
+`BlazorCmsContextExtensions.cs`
+```c#
+namespace BlazorCMS.Server.Data
+{
+    public static class BlazorCmsContextExtensions
+    {
+        public static void SeedHelloWorldSectionAndArticle(this BlazorCmsContext context)
+        {
+            var section = new Section
+            {
+                Name     = "Hello World!",
+                Articles = new List<Article>
+                {
+                    new Article
+                    {
+                        Title = "Hello World!",
+                        Body  = "This is an article!"
+                    }
+                }
+            };
+
+            context.Sections.Add(section);
+            context.SaveChanges();
+        }
+    }
+}
+```
+
+Then call this extension method in the `Startup.Configure`. The method should look like this in full:
+
+```c#
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    app.UseResponseCompression();
+
+    if (env.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+        app.UseBlazorDebugging();
+    }
+
+    app.UseStaticFiles();
+    app.UseClientSideBlazorFiles<Client.Startup>();
+
+    app.UseRouting();
+
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapDefaultControllerRoute();
+        endpoints.MapFallbackToClientSideBlazor<Client.Startup>("index.html");
+    });
+
+    using (var serviceScope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
+    {
+        using (var dbContext = serviceScope.ServiceProvider.GetService<BlazorCmsContext>())
+        {
+            dbContext.Database.Migrate();
+            dbContext.SeedHelloWorldSectionAndArticle();
+        }
     }
 }
 ```

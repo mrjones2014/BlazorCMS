@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using System.Linq;
 using AndcultureCode.CSharp.Conductors;
 using AndcultureCode.CSharp.Core.Interfaces.Conductors;
+using AndcultureCode.CSharp.Core.Interfaces.Data;
 using BlazorCMS.Server.Data;
 using BlazorCMS.Server.Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,9 @@ namespace BlazorCMS.Server
             });
 
             services.AddDbContext<BlazorCmsContext>(options => options.UseSqlite("Data Source=BlazorCMS.db"));
+
+            services.AddScoped<IRepository<Section>, Repository<Section>>();
+            services.AddScoped<IRepository<Article>, Repository<Article>>();
 
             services.AddScoped<IRepositoryCreateConductor<Section>, RepositoryCreateConductor<Section>>();
             services.AddScoped<IRepositoryReadConductor<Section>,   RepositoryReadConductor<Section>>();
@@ -75,6 +79,7 @@ namespace BlazorCMS.Server
                 using (var dbContext = serviceScope.ServiceProvider.GetService<BlazorCmsContext>())
                 {
                     dbContext.Database.Migrate();
+                    dbContext.SeedHelloWorldSectionAndArticle();
                 }
             }
         }

@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
-    [ResponseCache(CacheProfileName = "Never")]
     [Route("/api/sections")]
     public class SectionsController : BaseController
     {

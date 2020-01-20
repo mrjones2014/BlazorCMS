@@ -19,5 +19,15 @@ namespace BlazorCMS.Server.Data
         public DbSet<Section> Sections { get; set; }
 
         #endregion Entities
+
+        #region Helper Methods
+
+        public void Delete<T>(T entity) where T : class
+        {
+            var set = base.Set<T>();
+            set.Remove(entity);
+        }
+
+        #endregion Helper Methods
     }
 }
