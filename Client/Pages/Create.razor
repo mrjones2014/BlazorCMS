@@ -19,8 +19,8 @@
     private ArticleDto Article = new ArticleDto();
 
     [Inject]
-    private NavigationManager _navigationManager { get; set; }
-    private ArticleService    _articleService    { get; set; }
+    private NavigationManager NavigationManager { get; set; }
+    private ArticleService    _articleService;
 
     private bool IsLoading { get; set; }
 
@@ -36,7 +36,7 @@
             state.Articles = state.Articles.Where(e => e.Id != Article.Id).ToList();
             state.Articles.Add(result.ResultObject);
             Store.SetState(state);
-            _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{Article.Id}", true);
+            NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{Article.Id}", true);
         }
 
         IsLoading = false;
@@ -44,12 +44,12 @@
 
     private void OnCancel()
     {
-        _navigationManager.NavigateTo("/");
+        NavigationManager.NavigateTo("/");
     }
 
     protected override void OnInitialized()
     {
-        _articleService = new ArticleService(_navigationManager);
+        _articleService = new ArticleService(NavigationManager);
     }
 
     protected override Task OnParametersSetAsync()

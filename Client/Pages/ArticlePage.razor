@@ -25,21 +25,21 @@
     public long? SectionId { get; set; }
 
     [Inject]
-    private NavigationManager _navigationManager { get; set; }
-    private ArticleService    _articleService    { get; set; }
+    private NavigationManager NavigationManager { get; set; }
+    private ArticleService    _articleService;
 
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
 
     private void Edit()
     {
-        _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}/Edit");
+        NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}/Edit");
     }
 
     protected override async Task OnInitializedAsync()
     {
         SectionId ??= 1;
         ArticleId ??= 1;
-        _articleService = new ArticleService(_navigationManager);
+        _articleService = new ArticleService(NavigationManager);
         if (Article == null)
         {
             // populate all the articles for the section so the nav bar updates properly

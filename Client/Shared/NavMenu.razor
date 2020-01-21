@@ -29,14 +29,14 @@
                 </span>
                 @if (ExpandedSectionId == section.Id)
                 {
-                    @if (expandedSectionArticles == null || isLoadingArticles)
+                    @if (_expandedSectionArticles == null || _isLoadingArticles)
                     {
                         <Loading Light="@true"/>
                     }
                     else
                     {
                         <ul class="nav flex-column sub-menu">
-                            @foreach (var article in expandedSectionArticles)
+                            @foreach (var article in _expandedSectionArticles)
                             {
                                 <li class="nav-item px-3">
                                     <NavLink class="nav-link" href="@($"/Section/{section.Id}/Article/{article.Id}")">
@@ -59,9 +59,9 @@
 
 @code {
     [Inject]
-    private NavigationManager _navigationManager { get; set; }
-    private SectionService    _sectionService    { get; set; }
-    private ArticleService    _articleService    { get; set; }
+    private NavigationManager NavigationManager { get; set; }
+    private SectionService    _sectionService;
+    private ArticleService    _articleService;
     private bool collapseNavMenu = true;
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
@@ -76,8 +76,8 @@
         }
     }
 
-    private List<ArticleDto> expandedSectionArticles { get; set; }
-    private bool             isLoadingArticles       { get; set; }
+    private List<ArticleDto> _expandedSectionArticles = null;
+    private bool             _isLoadingArticles       = false;
 
     private void ToggleNavMenu()
     {
@@ -88,7 +88,7 @@
 
     private void Create(long sectionId)
     {
-        _navigationManager.NavigateTo($"/Section/{sectionId}/Create");
+        NavigationManager.NavigateTo($"/Section/{sectionId}/Create");
     }
 
     private async Task LoadArticlesForSections(long sectionId)
@@ -97,31 +97,31 @@
         if (sectionId == ExpandedSectionId)
         {
             ExpandedSectionId       = -1;
-            expandedSectionArticles = null;
-            isLoadingArticles       = false;
+            _expandedSectionArticles = null;
+            _isLoadingArticles       = false;
             return;
         }
 
         ExpandedSectionId = sectionId;
-        isLoadingArticles = true;
+        _isLoadingArticles = true;
 
         var existingArticles = Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == sectionId)?.ToList();
         if (existingArticles != null && existingArticles.Any())
         {
-            expandedSectionArticles = existingArticles;
-            isLoadingArticles       = false;
+            _expandedSectionArticles = existingArticles;
+            _isLoadingArticles       = false;
             return;
         }
 
         var result = await _articleService.Index(ExpandedSectionId);
         if (result.HasErrorsOrResultIsNull())
         {
-            expandedSectionArticles = new List<ArticleDto>();
-            isLoadingArticles       = false;
+            _expandedSectionArticles = new List<ArticleDto>();
+            _isLoadingArticles       = false;
             return;
         }
-        expandedSectionArticles = result.ResultObject.ToList();
-        isLoadingArticles       = false;
+        _expandedSectionArticles = result.ResultObject.ToList();
+        _isLoadingArticles       = false;
 
         // update shared state
         var state = Store.GetState<ClientState>();
@@ -142,8 +142,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _sectionService = new SectionService(_navigationManager);
-        _articleService = new ArticleService(_navigationManager);
+        _sectionService = new SectionService(NavigationManager);
+        _articleService = new ArticleService(NavigationManager);
         await LoadSections();
     }
 
