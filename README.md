@@ -1046,3 +1046,13 @@ public async Task<IResult<bool>> Post(ArticleDto article)
 
 }
 ```
+
+The create page is basically the same, but you'll call a new `Put` method on the service instead of a `Post` method.
+
+`ArticleService.cs`
+```c#
+public async Task<IResult<ArticleDto>> Put(ArticleDto article)
+{
+    return await _client.PutJsonAsync<Result<ArticleDto>>($"/api/{article.SectionId}/articles", article);
+}
+```

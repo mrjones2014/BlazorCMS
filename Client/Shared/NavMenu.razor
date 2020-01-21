@@ -1,4 +1,5 @@
-﻿@using AndcultureCode.CSharp.Core.Extensions
+﻿@using System.Text.RegularExpressions
+@using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
@@ -26,7 +27,7 @@
                         <span class="oi oi-book" aria-hidden="true"></span> @section.Name
                     </NavLink>
                 </span>
-                @if (expandedSectionId == section.Id)
+                @if (ExpandedSectionId == section.Id)
                 {
                     @if (expandedSectionArticles == null || isLoadingArticles)
                     {
@@ -43,6 +44,11 @@
                                     </NavLink>
                                 </li>
                             }
+                            <li class="nav-item px-3">
+                                <button type="button" class="btn btn-success w-100" @onclick="@(() => Create(section.Id))">
+                                    Create Article&nbsp;<i class="oi oi-plus"></i>
+                                </button>
+                            </li>
                         </ul>
                     }
                 }
@@ -59,7 +65,17 @@
     private bool collapseNavMenu = true;
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-    private long             expandedSectionId       { get; set; }
+    private long ExpandedSectionId
+    {
+        get => Store.GetState<ClientState>().ExpandedSectionId;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.ExpandedSectionId = value;
+            Store.SetState(state);
+        }
+    }
+
     private List<ArticleDto> expandedSectionArticles { get; set; }
     private bool             isLoadingArticles       { get; set; }
 
@@ -70,18 +86,23 @@
 
     private List<SectionDto> Sections => Store.GetState<ClientState>().Sections;
 
+    private void Create(long sectionId)
+    {
+        _navigationManager.NavigateTo($"/Section/{sectionId}/Create");
+    }
+
     private async Task LoadArticlesForSections(long sectionId)
     {
         // if clicked from the already expanded section, collapse it
-        if (sectionId == expandedSectionId)
+        if (sectionId == ExpandedSectionId)
         {
-            expandedSectionId       = -1;
+            ExpandedSectionId       = -1;
             expandedSectionArticles = null;
             isLoadingArticles       = false;
             return;
         }
 
-        expandedSectionId = sectionId;
+        ExpandedSectionId = sectionId;
         isLoadingArticles = true;
 
         var existingArticles = Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == sectionId)?.ToList();
@@ -92,7 +113,7 @@
             return;
         }
 
-        var result = await _articleService.Index(expandedSectionId);
+        var result = await _articleService.Index(ExpandedSectionId);
         if (result.HasErrorsOrResultIsNull())
         {
             expandedSectionArticles = new List<ArticleDto>();

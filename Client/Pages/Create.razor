@@ -1,0 +1,63 @@
+@page "/Section/{SectionId:long}/Create"
+@using AndcultureCode.CSharp.Core.Extensions
+@using BlazorCMS.Client.Services
+@using BlazorCMS.Client.State
+@using BlazorCMS.Shared.Dtos
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
+{
+    <input type="text" @bind-value="@Article.Title" @bind-value:event="oninput" class="form-control"/>
+    <Editor InitialContent="@Article.Body" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
+}
+
+@code {
+
+    [Parameter]
+    public long SectionId { get; set; }
+
+    private ArticleDto Article = new ArticleDto();
+
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+    private ArticleService    _articleService    { get; set; }
+
+    private bool IsLoading { get; set; }
+
+    private async Task OnSave(string newContent)
+    {
+        IsLoading = true;
+        Article.Body = newContent;
+        var result = await _articleService.Put(Article);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            Article = result.ResultObject;
+            var state = Store.GetState<ClientState>();
+            state.Articles = state.Articles.Where(e => e.Id != Article.Id).ToList();
+            state.Articles.Add(result.ResultObject);
+            Store.SetState(state);
+            _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{Article.Id}", true);
+        }
+
+        IsLoading = false;
+    }
+
+    private void OnCancel()
+    {
+        _navigationManager.NavigateTo("/");
+    }
+
+    protected override void OnInitialized()
+    {
+        _articleService = new ArticleService(_navigationManager);
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        var state = Store.GetState<ClientState>();
+        state.ExpandedSectionId = SectionId;
+        Store.SetState(state);
+        return base.OnParametersSetAsync();
+    }
+
+}

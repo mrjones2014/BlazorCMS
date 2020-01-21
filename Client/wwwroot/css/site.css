@@ -3,6 +3,10 @@
 @import url('Components/NavMenu.css');
 @import url('Components/Editor.css');
 
+.w-100 {
+    width: 100%;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -24,6 +28,7 @@ app {
 }
 
 .top-row {
+    z-index: 5;
     height: 3.5rem;
     display: flex;
     align-items: center;
