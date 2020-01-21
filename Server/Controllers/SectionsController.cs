@@ -42,10 +42,10 @@ namespace BlazorCMS.Server.Controllers
 
         #endregion Constructor
 
-        #region POST
+        #region PUT
 
-        [HttpPost]
-        public IActionResult Post([FromBody] SectionDto section)
+        [HttpPut]
+        public IActionResult Put([FromBody] SectionDto section)
         {
             var newSection = new Section
             {
@@ -60,13 +60,14 @@ namespace BlazorCMS.Server.Controllers
             return Ok(_mapper.Map<SectionDto>(createResult.ResultObject), null);
         }
 
-        #endregion POST
+        #endregion PUT
 
-        #region PATCH
+        #region POST
 
-        [HttpPatch]
-        public IActionResult Patch([FromBody] SectionDto section)
+        [HttpPost("{sectionId:long}")]
+        public IActionResult Post([FromRoute] long sectionId, [FromBody] SectionDto section)
         {
+            section.Id = sectionId;
             var getResult = _readConductor.FindById(section.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
@@ -85,7 +86,7 @@ namespace BlazorCMS.Server.Controllers
             return Ok(true, null);
         }
 
-        #endregion PATCH
+        #endregion POST
 
         #region GET
 

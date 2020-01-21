@@ -44,10 +44,10 @@ namespace BlazorCMS.Server.Controllers
 
         #endregion Constructor
 
-        #region POST
+        #region PUT
 
-        [HttpPost]
-        public IActionResult Post([FromBody] ArticleDto article)
+        [HttpPut]
+        public IActionResult Put([FromBody] ArticleDto article)
         {
             var newArticle = new Article
             {
@@ -64,13 +64,14 @@ namespace BlazorCMS.Server.Controllers
             return Ok(createResult.ResultObject, null);
         }
 
-        #endregion POST
+        #endregion PUT
 
-        #region PATCH
+        #region POST
 
-        [HttpPatch]
-        public IActionResult Patch([FromBody] ArticleDto article)
+        [HttpPost("{articleId:long}")]
+        public IActionResult Post([FromRoute] long articleId, [FromBody] ArticleDto article)
         {
+            article.Id = articleId;
             var getResult = _readConductor.FindById(article.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
@@ -90,7 +91,7 @@ namespace BlazorCMS.Server.Controllers
             return Ok(true, null);
         }
 
-        #endregion PATCH
+        #endregion Post
 
         #region GET
 

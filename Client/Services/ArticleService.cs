@@ -16,5 +16,10 @@ namespace BlazorCMS.Client.Services
         {
             return await _client.GetJsonAsync<Result<ArticleDto[]>>($"/api/{sectionId}/articles");
         }
+
+        public async Task<IResult<bool>> Post(ArticleDto article)
+        {
+            return await _client.PostJsonAsync<Result<bool>>($"/api/{article.SectionId}/articles/{article.Id}", article);
+        }
     }
 }

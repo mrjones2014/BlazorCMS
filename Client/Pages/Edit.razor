@@ -1,4 +1,5 @@
-@page "/Section/{SectionId:long}/Article/{ArticleId:long}"
+@page "/Section/{SectionId:long}/Article/{ArticleId:long}/Edit"
+@using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
@@ -6,14 +7,8 @@
 
 @if (Article != null)
 {
-    <h1>
-        @Article.Title
-        <button type="button" class="btn btn-warning float-right" @onclick="Edit">
-            <i class="oi oi-pencil"></i>
-        </button>
-    </h1>
-    <hr/>
-    <Markdown Content="@Article.Body"/>
+    <h1>Editing: @Article.Title</h1>
+    <Editor InitialContent="@Article.Body" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
 }
 
 @code {
@@ -28,11 +23,31 @@
     private NavigationManager _navigationManager { get; set; }
     private ArticleService    _articleService    { get; set; }
 
+    private bool IsLoading { get; set; }
+
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
 
-    private void Edit()
+    private async Task OnSave(string newContent)
     {
-        _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}/Edit");
+        IsLoading = true;
+        var article = Article;
+        article.Body = newContent;
+        var result = await _articleService.Post(article);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            var state = Store.GetState<ClientState>();
+            state.Articles = state.Articles.Where(e => e.Id != article.Id).ToList();
+            state.Articles.Add(article);
+            Store.SetState(state);
+            _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
+        }
+
+        IsLoading = false;
+    }
+
+    private void OnCancel()
+    {
+        _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
     }
 
     protected override async Task OnInitializedAsync()
@@ -52,7 +67,6 @@
 
             state.Articles = state.Articles.Where(e => e.SectionId != SectionId.Value).ToList();
             state.Articles.AddRange(result.ResultObject);
-            Store.SetState(state);
         }
     }
 

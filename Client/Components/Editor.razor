@@ -1,0 +1,62 @@
+@using BlazorStrap
+
+<BSTabGroup class="editor-tabgroup">
+    <BSTabList>
+        <BSTab>
+            <BSTabLabel>Edit</BSTabLabel>
+            <BSTabContent>
+                <textarea
+                    class="editor-textarea form-control"
+                    @bind-value="@Content"
+                    @bind-value:event="oninput">
+                </textarea>
+                <div class="editor-footer">
+                    <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="OnSaveCallback">
+                        @if (IsLoading)
+                        {
+                            <Loading/>
+                        }
+                        else
+                        {
+                            <span>Save</span>
+                        }
+                    </button>
+                    <button type="button" class="btn btn-secondary" disabled="@IsLoading" @onclick="OnCancelCallback">Cancel</button>
+                </div>
+            </BSTabContent>
+        </BSTab>
+        <BSTab>
+            <BSTabLabel>Preview</BSTabLabel>
+            <BSTabContent>
+                <Markdown Content="@Content"/>
+            </BSTabContent>
+        </BSTab>
+    </BSTabList>
+    <BSTabSelectedContent/>
+</BSTabGroup>
+
+@code {
+
+    [Parameter]
+    public string InitialContent { get; set; }
+
+    [Parameter]
+    public Func<string, Task> OnSave { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public Action OnCancel { get; set; }
+
+    private string Content { get; set; }
+
+    private void OnSaveCallback() => OnSave(Content);
+    private void OnCancelCallback() => OnCancel();
+
+    protected override void OnInitialized()
+    {
+        Content = InitialContent ?? "";
+    }
+
+}

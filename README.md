@@ -297,10 +297,10 @@ namespace BlazorCMS.Server.Controllers
 
         #endregion Constructor
 
-        #region POST
+        #region PUT
 
-        [HttpPost]
-        public IActionResult Post([FromBody] SectionDto section)
+        [HttpPut]
+        public IActionResult Put([FromBody] SectionDto section)
         {
             var newSection = new Section
             {
@@ -315,13 +315,14 @@ namespace BlazorCMS.Server.Controllers
             return Ok(_mapper.Map<SectionDto>(createResult.ResultObject), null);
         }
 
-        #endregion POST
+        #endregion PUT
 
-        #region PATCH
+        #region POST
 
-        [HttpPatch]
-        public IActionResult Patch([FromBody] SectionDto section)
+        [HttpPost("{sectionId:long}")]
+        public IActionResult Post([FromRoute] long sectionId, [FromBody] SectionDto section)
         {
+            section.Id = sectionId;
             var getResult = _readConductor.FindById(section.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
@@ -340,7 +341,7 @@ namespace BlazorCMS.Server.Controllers
             return Ok(true, null);
         }
 
-        #endregion PATCH
+        #endregion POST
 
         #region GET
 
@@ -393,21 +394,11 @@ namespace BlazorCMS.Server.Controllers
         #endregion DELETE
     }
 }
+
 ```
 
 `ArticlesController.cs`
 ```c#
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using AndcultureCode.CSharp.Core.Extensions;
-using AndcultureCode.CSharp.Core.Interfaces.Conductors;
-using AutoMapper;
-using BlazorCMS.Server.Data.Models;
-using BlazorCMS.Shared.Dtos;
-using Microsoft.AspNetCore.Mvc;
-
 namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
@@ -443,10 +434,10 @@ namespace BlazorCMS.Server.Controllers
 
         #endregion Constructor
 
-        #region POST
+        #region PUT
 
-        [HttpPost]
-        public IActionResult Post([FromBody] ArticleDto article)
+        [HttpPut]
+        public IActionResult Put([FromBody] ArticleDto article)
         {
             var newArticle = new Article
             {
@@ -463,13 +454,14 @@ namespace BlazorCMS.Server.Controllers
             return Ok(createResult.ResultObject, null);
         }
 
-        #endregion POST
+        #endregion PUT
 
-        #region PATCH
+        #region POST
 
-        [HttpPatch]
-        public IActionResult Patch([FromBody] ArticleDto article)
+        [HttpPost("{articleId:long}")]
+        public IActionResult Post([FromRoute] long articleId, [FromBody] ArticleDto article)
         {
+            article.Id = articleId;
             var getResult = _readConductor.FindById(article.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
@@ -489,7 +481,7 @@ namespace BlazorCMS.Server.Controllers
             return Ok(true, null);
         }
 
-        #endregion PATCH
+        #endregion Post
 
         #region GET
 
@@ -885,6 +877,152 @@ We can now use this component to render our article:
     private ArticleService    _articleService    { get; set; }
 
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        SectionId ??= 1;
+        ArticleId ??= 1;
+        _articleService = new ArticleService(_navigationManager);
+        if (Article == null)
+        {
+            // populate all the articles for the section so the nav bar updates properly
+            var result = await _articleService.Index(SectionId.Value);
+            var state  = Store.GetState<ClientState>();
+            if (state.Articles == null)
+            {
+                state.Articles = new List<ArticleDto>();
+            }
+
+            state.Articles = state.Articles.Where(e => e.SectionId != SectionId.Value).ToList();
+            state.Articles.AddRange(result.ResultObject);
+        }
+    }
+
+}
+```
+
+Now let's build an editor for our create/edit screens. For this we'll add the `BlazorStrap` package (Bootstrap 4 Blazor components);
+
+`dotnet add package BlazorStrap`
+
+Now we can use it to build a simple editor.
+
+`Editor.razor`
+```c#
+@using BlazorStrap
+
+<BSTabGroup class="editor-tabgroup">
+    <BSTabList>
+        <BSTab>
+            <BSTabLabel>Edit</BSTabLabel>
+            <BSTabContent>
+                <textarea
+                    class="editor-textarea form-control"
+                    @bind-value="@Content"
+                    @bind-value:event="oninput">
+                </textarea>
+                <div class="editor-footer">
+                    <button type="button" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary">Cancel</button>
+                </div>
+            </BSTabContent>
+        </BSTab>
+        <BSTab>
+            <BSTabLabel>Preview</BSTabLabel>
+            <BSTabContent>
+                <Markdown Content="@Content"/>
+            </BSTabContent>
+        </BSTab>
+    </BSTabList>
+    <BSTabSelectedContent/>
+</BSTabGroup>
+
+@code {
+
+    [Parameter]
+    public string InitialContent { get; set; }
+
+    [Parameter]
+    public Func<string, Task> OnSave { get; set; }
+
+    [Parameter]
+    public Action OnCancel { get; set; }
+
+    private string Content { get; set; }
+
+    private void OnSaveCallback() => OnSave(Content);
+
+    protected override void OnInitialized()
+    {
+        Content = InitialContent ?? "";
+    }
+
+}
+```
+
+Next we need to add a `POST` method to our service, and create the edit page.
+
+`ArticleService.cs`
+```c#
+public async Task<IResult<bool>> Post(ArticleDto article)
+{
+    return await _client.PostJsonAsync<Result<bool>>($"/api/{article.SectionId}/articles/{article.Id}", article);
+}
+```
+
+`Edit.razor`
+```razor
+@page "/Section/{SectionId:long}/Article/{ArticleId:long}/Edit"
+@using AndcultureCode.CSharp.Core.Extensions
+@using BlazorCMS.Client.Services
+@using BlazorCMS.Client.State
+@using BlazorCMS.Shared.Dtos
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
+{
+    <h1>Editing: @Article.Title</h1>
+    <Editor InitialContent="@Article.Body" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
+}
+
+@code {
+
+    [Parameter]
+    public long? ArticleId { get; set; }
+
+    [Parameter]
+    public long? SectionId { get; set; }
+
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+    private ArticleService    _articleService    { get; set; }
+
+    private bool IsLoading { get; set; }
+
+    private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
+
+    private async Task OnSave(string newContent)
+    {
+        IsLoading = true;
+        var article = Article;
+        article.Body = newContent;
+        var result = await _articleService.Post(article);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            var state = Store.GetState<ClientState>();
+            state.Articles = state.Articles.Where(e => e.Id != article.Id).ToList();
+            state.Articles.Add(article);
+            Store.SetState(state);
+            _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
+        }
+
+        IsLoading = false;
+    }
+
+    private void OnCancel()
+    {
+        _navigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
+    }
 
     protected override async Task OnInitializedAsync()
     {
