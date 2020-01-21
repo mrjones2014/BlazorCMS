@@ -550,6 +550,10 @@ namespace BlazorCMS.Server.Data
     {
         public static void SeedHelloWorldSectionAndArticle(this BlazorCmsContext context)
         {
+            if (context.Sections.Any())
+            {
+                return;
+            }
             var section = new Section
             {
                 Name     = "Hello World!",
@@ -645,17 +649,38 @@ Now we'll need an HTTP client to implement client side services.
 
 Now add a service class under a new `Services`.
 
+`Service.cs`
+```c#
+namespace BlazorCMS.Client.Services
+{
+    public abstract class Service
+    {
+        protected HttpClient _client { get; set; }
+
+        public Service(NavigationManager manager)
+        {
+            _client = new HttpClient
+            {
+                BaseAddress = new Uri(manager.BaseUri)
+            };
+        }
+    }
+}
+```
+
 `SectionService.cs`
 ```c#
 namespace BlazorCMS.Client.Services
 {
-    public class SectionService
+    public class SectionService : Service
     {
-        private static HttpClient client = new HttpClient();
-
-        public static async Task<IResult<SectionDto[]>> Index()
+        public SectionService(NavigationManager navigationManager) : base(navigationManager)
         {
-            return await client.GetJsonAsync<IResult<SectionDto[]>>("/api/sections");
+        }
+
+        public async Task<IResult<SectionDto[]>> Index()
+        {
+            return await _client.GetJsonAsync<Result<SectionDto[]>>("/api/sections");
         }
     }
 }
@@ -667,23 +692,20 @@ Now modify the `NavMenu.razor` to index and show the available sections in the s
 @foreach (var section in Sections)
 {
     <li class="nav-item px-3">
-        <NavLink class="nav-link" href="@section.Id">
-            <span class="oi oi-plus" aria-hidden="true"></span> @section.Name
-        </NavLink>
+        <span class="oi oi-plus" aria-hidden="true"></span> @section.Name
     </li>
 }
 ...
 @code {
-List<SectionDto> Sections => GetSections();
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+    private SectionService _sectionService       { get; set; }
 
-    private List<SectionDto> GetSections()
-    {
-        return Store.GetState<ClientState>().Sections;
-    }
+    private List<SectionDto> Sections => List<SectionDto> Sections => Store.GetState<ClientState>().Sections;
 
     private async Task LoadSections()
     {
-        var result = await SectionService.Index();
+        var result = await _sectionService.Index();
         var state = Store.GetState<ClientState>();
         state.Sections = result.ResultObject?.ToList() ?? new List<SectionDto>();
         Store.SetState(state);
@@ -691,9 +713,118 @@ List<SectionDto> Sections => GetSections();
 
     protected override async Task OnInitializedAsync()
     {
+        _sectionService = new SectionService(_navigationManager);
         await LoadSections();
     }
 }
 ```
 
 Now, if you run the app, you should see the "Hello World!" seeded section appear on the sidebar!
+
+Let's work on showing the articles in a section when you select a section. First let's add a loading component to show a loading state.
+We'll base this on [SpinKit](https://tobiasahlin.com/spinkit/). Add a `Components` directory under the `Client` project and add a file called
+`Loading.razor`, and add a `Loading.css` file under `Client/wwwroot/Components`. Choose a loading spinner from SpinKit and
+add the HTML to `Loading.razor` and the CSS to `Loading.css`. Then, in `site.css`, add the following line to the top:
+
+`@import url('Components/Loading.css');`
+
+Next, we'll need an `ArticleService.cs`:
+
+```c#
+namespace BlazorCMS.Client.Services
+{
+    public class ArticleService : Service
+    {
+        public ArticleService(NavigationManager manager) : base(manager)
+        {
+        }
+
+        public async Task<IResult<ArticleDto[]>> Index(long sectionId)
+        {
+            return await _client.GetJsonAsync<Result<ArticleDto[]>>($"/api/{sectionId}/articles");
+        }
+    }
+}
+```
+
+Then, add it to `NavMenu.razor`:
+```razor
+[Inject]
+private NavigationManager _navigationManager { get; set; }
+private SectionService    _sectionService    { get; set; }
+private ArticleService    _articleService    { get; set; }
+...
+protected override async Task OnInitializedAsync()
+{
+    _sectionService = new SectionService(_navigationManager);
+    _articleService = new ArticleService(_navigationManager);
+    await LoadSections();
+}
+```
+
+Let's add a bit of code to `NavMenu.razor` to expand sections to show articles on click:
+
+```razor
+@foreach (var section in Sections)
+{
+    <li class="nav-item px-3">
+        <span @onclick="@(() => LoadArticlesForSections(section.Id))">
+            <NavLink class="nav-link">
+                <span class="oi oi-book" aria-hidden="true"></span> @section.Name
+            </NavLink>
+        </span>
+        @if (expandedSectionId == section.Id)
+        {
+            @if (expandedSectionArticles == null || isLoadingArticles)
+            {
+                <Loading Light="@true"/>
+            }
+            else
+            {
+                <ul class="nav flex-column sub-menu">
+                    @foreach (var article in expandedSectionArticles)
+                    {
+                        <li class="nav-item px-3">
+                            <NavLink class="nav-link" href="@article.Id">
+                                <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
+                            </NavLink>
+                        </li>
+                    }
+                </ul>
+            }
+        }
+    </li>
+}
+
+...
+
+private long             expandedSectionId       { get; set; }
+private List<ArticleDto> expandedSectionArticles { get; set; }
+private bool             isLoadingArticles       { get; set; }
+
+private async Task LoadArticlesForSections(long sectionId)
+{
+    // if clicked from the already expanded section, collapse it
+    if (sectionId == expandedSectionId)
+    {
+        expandedSectionId       = -1;
+        expandedSectionArticles = null;
+        isLoadingArticles       = false;
+        return;
+    }
+
+    expandedSectionId = sectionId;
+    isLoadingArticles = true;
+    var result = await _articleService.Index(expandedSectionId);
+    if (result.HasErrorsOrResultIsNull())
+    {
+        expandedSectionArticles = new List<ArticleDto>();
+        isLoadingArticles       = false;
+        return;
+    }
+    expandedSectionArticles = result.ResultObject.ToList();
+    isLoadingArticles       = false;
+}
+```
+
+Now clicking a section in the sidebar should briefly show a loading state, and then show the articles in the section.

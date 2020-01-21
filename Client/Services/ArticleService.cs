@@ -6,15 +6,15 @@ using Microsoft.AspNetCore.Components;
 
 namespace BlazorCMS.Client.Services
 {
-    public class SectionService : Service
+    public class ArticleService : Service
     {
-        public SectionService(NavigationManager navigationManager) : base(navigationManager)
+        public ArticleService(NavigationManager manager) : base(manager)
         {
         }
 
-        public async Task<IResult<SectionDto[]>> Index()
+        public async Task<IResult<ArticleDto[]>> Index(long sectionId)
         {
-            return await _client.GetJsonAsync<Result<SectionDto[]>>("/api/sections");
+            return await _client.GetJsonAsync<Result<ArticleDto[]>>($"/api/{sectionId}/articles");
         }
     }
 }
