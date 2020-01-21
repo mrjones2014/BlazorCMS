@@ -20,7 +20,7 @@ namespace BlazorCMS.Server.Data
                     new Article
                     {
                         Title = "Hello World!",
-                        Body  = "This is an article!"
+                        Body  = "# This Is an Article!\n\n[BlazorCMS Repo](https://github.com/andCulture/BlazorCMS)"
                     }
                 }
             };

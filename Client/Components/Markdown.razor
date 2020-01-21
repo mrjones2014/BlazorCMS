@@ -1,0 +1,15 @@
+@using Markdig;
+
+@GetRenderedMarkdownString()
+
+@code {
+
+    [Parameter]
+    public string Content { get; set; }
+
+    private MarkupString GetRenderedMarkdownString() => (MarkupString)Markdig.Markdown.ToHtml(
+        markdown: Content,
+        pipeline: new MarkdownPipelineBuilder().UseAdvancedExtensions().Build()
+    );
+
+}

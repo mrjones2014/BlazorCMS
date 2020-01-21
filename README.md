@@ -785,7 +785,7 @@ Let's add a bit of code to `NavMenu.razor` to expand sections to show articles o
                     @foreach (var article in expandedSectionArticles)
                     {
                         <li class="nav-item px-3">
-                            <NavLink class="nav-link" href="@article.Id">
+                            <NavLink class="nav-link" href="@($"/Section/{section.Id}/Article/{article.Id}")">
                                 <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
                             </NavLink>
                         </li>
@@ -828,3 +828,83 @@ private async Task LoadArticlesForSections(long sectionId)
 ```
 
 Now clicking a section in the sidebar should briefly show a loading state, and then show the articles in the section.
+
+Let's start building the article view. To render markdown, we'll use `MarkDig`.
+
+`dotnet add package Markdig`
+
+The actual component itself is pretty straightforward. We'll want to add a preview mode to the editor later, so let's extract the markdown
+rendering logic into a component. Add a `Markdown.razor` file in the `Components` directory.
+
+`Markdown.razor`
+```razor
+@using Markdig;
+
+@GetRenderedMarkdownString()
+
+@code {
+
+    [Parameter]
+    public string Content { get; set; }
+
+    private MarkupString GetRenderedMarkdownString() => (MarkupString)Markdig.Markdown.ToHtml(
+        markdown: Content,
+        pipeline: new MarkdownPipelineBuilder().UseAdvancedExtensions().Build()
+    );
+
+}
+``` 
+
+We can now use this component to render our article:
+
+`ArticlePage.razor`
+```razor
+@page "/Section/{SectionId:long}/Article/{ArticleId:long}"
+@using BlazorCMS.Client.Services
+@using BlazorCMS.Client.State
+@using BlazorCMS.Shared.Dtos
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
+{
+    <h1>@Article.Title</h1>
+    <hr/>
+    <Markdown Content="@Article.Body"/>
+}
+
+@code {
+
+    [Parameter]
+    public long? ArticleId { get; set; }
+
+    [Parameter]
+    public long? SectionId { get; set; }
+
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+    private ArticleService    _articleService    { get; set; }
+
+    private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        SectionId ??= 1;
+        ArticleId ??= 1;
+        _articleService = new ArticleService(_navigationManager);
+        if (Article == null)
+        {
+            // populate all the articles for the section so the nav bar updates properly
+            var result = await _articleService.Index(SectionId.Value);
+            var state  = Store.GetState<ClientState>();
+            if (state.Articles == null)
+            {
+                state.Articles = new List<ArticleDto>();
+            }
+
+            state.Articles = state.Articles.Where(e => e.SectionId != SectionId.Value).ToList();
+            state.Articles.AddRange(result.ResultObject);
+        }
+    }
+
+}
+```

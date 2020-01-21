@@ -38,7 +38,7 @@
                             @foreach (var article in expandedSectionArticles)
                             {
                                 <li class="nav-item px-3">
-                                    <NavLink class="nav-link" href="@article.Id">
+                                    <NavLink class="nav-link" href="@($"/Section/{section.Id}/Article/{article.Id}")">
                                         <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
                                     </NavLink>
                                 </li>
@@ -83,6 +83,15 @@
 
         expandedSectionId = sectionId;
         isLoadingArticles = true;
+
+        var existingArticles = Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == sectionId)?.ToList();
+        if (existingArticles != null && existingArticles.Any())
+        {
+            expandedSectionArticles = existingArticles;
+            isLoadingArticles       = false;
+            return;
+        }
+
         var result = await _articleService.Index(expandedSectionId);
         if (result.HasErrorsOrResultIsNull())
         {
@@ -92,6 +101,14 @@
         }
         expandedSectionArticles = result.ResultObject.ToList();
         isLoadingArticles       = false;
+
+        // update shared state
+        var state = Store.GetState<ClientState>();
+        if (state.Articles == null)
+        {
+            state.Articles = new List<ArticleDto>();
+        }
+        state.Articles.AddRange(result.ResultObject);
     }
 
     private async Task LoadSections()

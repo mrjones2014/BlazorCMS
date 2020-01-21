@@ -1,0 +1,48 @@
+@page "/Section/{SectionId:long}/Article/{ArticleId:long}"
+@using BlazorCMS.Client.Services
+@using BlazorCMS.Client.State
+@using BlazorCMS.Shared.Dtos
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
+{
+    <h1>@Article.Title</h1>
+    <hr/>
+    <Markdown Content="@Article.Body"/>
+}
+
+@code {
+
+    [Parameter]
+    public long? ArticleId { get; set; }
+
+    [Parameter]
+    public long? SectionId { get; set; }
+
+    [Inject]
+    private NavigationManager _navigationManager { get; set; }
+    private ArticleService    _articleService    { get; set; }
+
+    private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        SectionId ??= 1;
+        ArticleId ??= 1;
+        _articleService = new ArticleService(_navigationManager);
+        if (Article == null)
+        {
+            // populate all the articles for the section so the nav bar updates properly
+            var result = await _articleService.Index(SectionId.Value);
+            var state  = Store.GetState<ClientState>();
+            if (state.Articles == null)
+            {
+                state.Articles = new List<ArticleDto>();
+            }
+
+            state.Articles = state.Articles.Where(e => e.SectionId != SectionId.Value).ToList();
+            state.Articles.AddRange(result.ResultObject);
+        }
+    }
+
+}
