@@ -21,9 +21,5 @@
   <ItemGroup>
     <ProjectReference Include="..\Shared\BlazorCMS.Shared.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <_ContentIncludedByDefault Remove="wwwroot\BlazorContextMenu\blazorContextMenu.css" />
-    <_ContentIncludedByDefault Remove="wwwroot\BlazorContextMenu\blazorContextMenu.js" />
-  </ItemGroup>
 
 </Project>
