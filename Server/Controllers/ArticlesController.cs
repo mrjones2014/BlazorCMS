@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
-    [Route("/api/{sectionId:long}/articles")]
+    [Route("/api/sections/{sectionId:long}/articles")]
     public class ArticlesController : BaseController
     {
         #region Properties

@@ -1,9 +1,13 @@
+@using System.ComponentModel
 @using BlazorCMS.Shared.Dtos
-<ContextMenu Id="@(GetMenuId(Section.Id))">
-    <Item OnClick="@OnEditCallback">
-        <i class="oi oi-pencil"></i>
-        &nbsp;Edit
-    </Item>
+<ContextMenu Id="@GetMenuId(GetId(), Type ?? SidebarContextMenuType.SECTION)">
+    @if (ShowEdit.HasValue && ShowEdit.Value)
+    {
+        <Item OnClick="@OnEditCallback">
+            <i class="oi oi-pencil"></i>
+            &nbsp;Edit
+        </Item>
+    }
     <Item OnClick="@OnDeleteCallback">
         <i class="oi oi-trash"></i>
         &nbsp;Delete
@@ -12,25 +16,63 @@
 
 @code {
 
-    public static string GetMenuId(long sectionId) => $"SidebarContextMenu-{sectionId}";
+    public enum SidebarContextMenuType
+    {
+        SECTION,
+        ARTICLE,
+    }
+
+    public static string GetMenuId(long id, SidebarContextMenuType type = SidebarContextMenuType.SECTION) => $"SidebarContextMenu-{type}-{id}";
 
     [Parameter]
-    public Action<long> OnEditSection { get; set; }
+    public Action<long>? OnEdit { get; set; }
 
     [Parameter]
-    public Func<long, Task> OnDeleteSection { get; set; }
+    public Func<long, Task> OnDelete { get; set; }
 
     [Parameter]
-    public SectionDto Section { get; set; }
+    public SectionDto? Section { get; set; }
+
+    [Parameter]
+    public ArticleDto? Article { get; set; }
+
+    [Parameter]
+    public SidebarContextMenuType? Type { get; set; }
+
+    [Parameter]
+    public bool? ShowEdit { get; set; }
 
     private void OnEditCallback()
     {
-        OnEditSection(Section.Id);
+        if (OnEdit != null)
+        {
+            OnEdit(GetId());
+        }
     }
 
     private void OnDeleteCallback()
     {
-        OnDeleteSection(Section.Id);
+        OnDelete(GetId());
+    }
+
+    private long GetId()
+    {
+        switch (Type)
+        {
+            case SidebarContextMenuType.ARTICLE:
+                return Article?.Id ?? -1;
+            case SidebarContextMenuType.SECTION:
+                return Section?.Id ?? -1;
+            default:
+                return -1;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        ShowEdit ??= true;
+        Type ??= SidebarContextMenuType.SECTION;
+        base.OnInitialized();
     }
 
 }
