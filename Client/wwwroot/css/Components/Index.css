@@ -1,0 +1,24 @@
+.home-icon-container {
+    text-align: center;
+}
+
+.home-icon-container > .oi-book {
+    z-index: 2;
+    font-size: 2500%;
+    position: absolute;
+    top: 40%;
+    left: 58%;
+    transform: translateX(-50%);
+    -webkit-transform: translateX(-50%);
+}
+
+.home-icon-container > .oi-fire {
+    z-index: 1;
+    font-size: 3500%;
+    position: absolute;
+    color: red;
+    top: 25%;
+    left: 58%;
+    transform: translateX(-50%);
+    -webkit-transform: translateX(-50%);
+}

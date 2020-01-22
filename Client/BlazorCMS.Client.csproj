@@ -11,6 +11,7 @@
     <PackageReference Include="Blazor.ContextMenu" Version="1.6.0" />
     <PackageReference Include="BlazorStrap" Version="1.1.101" />
     <PackageReference Include="Markdig" Version="0.18.1" />
+    <PackageReference Include="Markdig.SyntaxHighlighting" Version="1.1.7" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor" Version="3.1.0-preview4.19579.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="3.1.0-preview4.19579.2" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.HttpClient" Version="3.1.0-preview4.19579.2" />

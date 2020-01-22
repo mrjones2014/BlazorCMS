@@ -24,12 +24,13 @@
     private ArticleService    _articleService;
 
     private bool IsLoading { get; set; }
-    
+
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
 
     private async Task OnSave(ArticleDto article)
     {
         IsLoading     = true;
+        this.StateHasChanged();
         var result    = await _articleService.Post(article);
         var state     = Store.GetState<ClientState>();
         state.ExpandedSectionId = SectionId;
@@ -43,7 +44,7 @@
         }
 
         IsLoading = false;
-
+        this.StateHasChanged();
         state.UpdateNavMenu();
     }
 

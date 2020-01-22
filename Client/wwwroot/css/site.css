@@ -2,6 +2,7 @@
 @import url('Components/Loading.css');
 @import url('Components/NavMenu.css');
 @import url('Components/Editor.css');
+@import url('Components/Index.css');
 
 .w-100 {
     width: 100%;

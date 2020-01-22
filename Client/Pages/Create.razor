@@ -27,6 +27,8 @@
     private async Task OnSave(ArticleDto article)
     {
         IsLoading  = true;
+        this.StateHasChanged();
+        article.SectionId = SectionId;
         var state  = Store.GetState<ClientState>();
         var result = await _articleService.Put(Article);
         if (!result.HasErrorsOrResultIsNull())
@@ -39,6 +41,7 @@
         }
 
         IsLoading = false;
+        this.StateHasChanged();
         state.UpdateNavMenu();
     }
 
