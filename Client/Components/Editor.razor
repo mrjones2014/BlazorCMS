@@ -1,0 +1,78 @@
+@using BlazorCMS.Shared.Dtos
+@using BlazorStrap
+
+<input type="text" @bind-value="@Content.Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
+<BSTabGroup class="editor-tabgroup">
+    <BSTabList>
+        <BSTab>
+            <BSTabLabel>Edit</BSTabLabel>
+            <BSTabContent>
+                <textarea
+                    class="editor-textarea form-control"
+                    @bind-value="@Content.Body"
+                    @bind-value:event="oninput"></textarea>
+                <div class="editor-footer">
+                    <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="@OnSaveCallback">
+                        @if (IsLoading)
+                        {
+                            <Loading/>
+                        }
+                        else
+                        {
+                            <span>Save</span>
+                        }
+                    </button>
+                    <button type="button" class="btn btn-secondary" disabled="@IsLoading" @onclick="@OnCancelCallback">Cancel</button>
+                </div>
+            </BSTabContent>
+        </BSTab>
+        <BSTab>
+            <BSTabLabel>Preview</BSTabLabel>
+            <BSTabContent>
+                <Markdown Content="@Content.Body"/>
+            </BSTabContent>
+        </BSTab>
+    </BSTabList>
+    <BSTabSelectedContent/>
+</BSTabGroup>
+
+@code {
+
+    [Inject]
+    IJSRuntime JsRuntime { get; set; }
+
+    [Parameter]
+    public ArticleDto InitialContent { get; set; }
+
+    [Parameter]
+    public Func<ArticleDto, Task> OnSave { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public Action OnCancel { get; set; }
+
+    private ArticleDto Content { get; set; }
+
+    private void OnSaveCallback() => OnSave(Content);
+    private void OnCancelCallback() => OnCancel();
+
+    protected override Task OnParametersSetAsync()
+    {
+        Content       = InitialContent ?? new ArticleDto();
+        Content.Body  = Content.Body?.Trim() ?? "";
+        Content.Title = Content.Title?.Trim() ?? "";
+        return base.OnParametersSetAsync();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.focus", ".form-control.editor-title-input");
+        }
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+}

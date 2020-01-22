@@ -1,8 +1,9 @@
-﻿@using AndcultureCode.CSharp.Core.Extensions
+﻿@using System.Collections.Immutable
+@using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
-@inherits BlazorState.BlazorStateComponent
+@inherits UpdatableComponent
 
 <div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">BlazorCMS</a>
@@ -18,94 +19,277 @@
                 <span class="oi oi-home" aria-hidden="true"></span> Home
             </NavLink>
         </li>
-        @foreach (var section in Sections)
+        @if (_isLoadingAll)
+        {
+            <Loading Light="@true"/>
+        }
+        else
         {
             <li class="nav-item px-3">
-                <span @onclick="@(() => LoadArticlesForSections(section.Id))">
-                    <NavLink class="nav-link">
-                        <span class="oi oi-book" aria-hidden="true"></span> @section.Name
-                    </NavLink>
-                </span>
-                @if (expandedSectionId == section.Id)
-                {
-                    @if (expandedSectionArticles == null || isLoadingArticles)
+                <button type="button" class="btn btn-success w-100" @onclick="@OnSectionCreate">
+                    Create Section&nbsp;<i class="oi oi-plus"></i>
+                </button>
+            </li>
+            @foreach (var section in Sections)
+            {
+                <li class="nav-item px-3">
+                    @if (_editingSectionId == section.Id)
                     {
-                        <Loading Light="@true"/>
+                        <SidebarEditSection
+                            SectionId="@section.Id"
+                            InitialTitle="@section.Name"
+                            OnSave="@OnSectionEditConfirm"/>
                     }
                     else
                     {
-                        <ul class="nav flex-column sub-menu">
-                            @foreach (var article in expandedSectionArticles)
-                            {
-                                <li class="nav-item px-3">
-                                    <NavLink class="nav-link" href="@article.Id">
-                                        <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
-                                    </NavLink>
-                                </li>
-                            }
-                        </ul>
+                        <span @onclick="@(() => LoadArticlesForSections(section.Id))">
+                            <ContextMenuTrigger MenuId="@(SidebarContextMenu.GetMenuId(section.Id))">
+                                <NavLink class="nav-link">
+                                    <span class="oi oi-book" aria-hidden="true"></span> @section.Name
+                                </NavLink>
+                            </ContextMenuTrigger>
+                            <SidebarContextMenu Section="@section" OnEdit="@OnSectionEdit" OnDelete="@OnSectionDelete"/>
+                        </span>
                     }
-                }
-            </li>
+                    @if (ExpandedSectionId == section.Id)
+                    {
+                        @if (IsLoadingArticles)
+                        {
+                            <Loading Light="@true"/>
+                        }
+                        else
+                        {
+                            <ul class="nav flex-column sub-menu">
+                                @foreach (var article in ExpandedSectionArticles)
+                                {
+                                    <li class="nav-item px-3">
+                                        <ContextMenuTrigger MenuId="@SidebarContextMenu.GetMenuId(article.Id, SidebarContextMenu.SidebarContextMenuType.ARTICLE)">
+                                            <NavLink class="nav-link" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
+                                                <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
+                                            </NavLink>
+                                        </ContextMenuTrigger>
+                                        <SidebarContextMenu Article="@article" OnDelete="@OnArticleDelete" Type="@SidebarContextMenu.SidebarContextMenuType.ARTICLE" ShowEdit="@false"/>
+                                    </li>
+                                }
+                                <li class="nav-item px-3">
+                                    <button type="button" class="btn btn-success w-100" @onclick="@(() => Create(section.Id))">
+                                        Create Article&nbsp;<i class="oi oi-plus"></i>
+                                    </button>
+                                </li>
+                            </ul>
+                        }
+                    }
+                </li>
+            }
+            @if (_showSectionCreate)
+            {
+                <li class="nav-item px-3">
+                    <SidebarEditSection
+                        SectionId="@(-1)"
+                        InitialTitle=""
+                        OnSave="@OnSectionCreateConfirm"/>
+                </li>
+            }
         }
     </ul>
 </div>
 
 @code {
     [Inject]
-    private NavigationManager _navigationManager { get; set; }
-    private SectionService    _sectionService    { get; set; }
-    private ArticleService    _articleService    { get; set; }
+    private NavigationManager NavigationManager { get; set; }
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; }
+
+    private SectionService    _sectionService;
+    private ArticleService    _articleService;
     private bool collapseNavMenu = true;
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-    private long             expandedSectionId       { get; set; }
-    private List<ArticleDto> expandedSectionArticles { get; set; }
-    private bool             isLoadingArticles       { get; set; }
+    private bool _isLoadingAll      = false;
+    private long _editingSectionId  = -1;
+    private bool _showSectionCreate = false;
+
+    private long ExpandedSectionId
+    {
+        get => Store.GetState<ClientState>().ExpandedSectionId;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.ExpandedSectionId = value;
+            Store.SetState(state);
+        }
+    }
+
+    private List<ArticleDto> ExpandedSectionArticles
+    {
+        get => Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == ExpandedSectionId).ToList() ?? new List<ArticleDto>();
+    }
+
+    private bool IsLoadingArticles
+    {
+        get => Store.GetState<ClientState>().SidebarLoadingArticles;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.SidebarLoadingArticles = value;
+            Store.SetState(state);
+        }
+    }
+
+    private void OnSectionEdit(long sectionId)
+    {
+        _editingSectionId = sectionId;
+        this.StateHasChanged();
+    }
+
+    private void OnSectionCreate()
+    {
+        _showSectionCreate = true;
+    }
+
+    private async Task OnSectionCreateConfirm(long sectionId, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            _showSectionCreate = false;
+            this.StateHasChanged();
+            return;
+        }
+
+        _isLoadingAll = true;
+        var section   = new SectionDto
+        {
+            Name = title
+        };
+        var state  = Store.GetState<ClientState>();
+        var result = await _sectionService.Create(section);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            state.Sections = state.Sections.Add(result.ResultObject);
+        }
+
+        _isLoadingAll      = false;
+        _showSectionCreate = false;
+        this.StateHasChanged();
+    }
+
+    private async Task OnArticleDelete(long articleId)
+    {
+        _isLoadingAll = true;
+        var shouldRedirect = await JsRuntime.InvokeAsync<bool>("BlazorCmsJsFunctions.hasClass", $"#nav-link-article-{articleId}", "active");
+        Console.WriteLine(shouldRedirect);
+        var state          = Store.GetState<ClientState>();
+        var article        = state.Articles.First(e => e.Id == articleId);
+        var result         = await _articleService.Delete(article.SectionId, articleId);
+        if (result.ResultObject)
+        {
+            state.Articles = state.Articles.Where(e => e.Id != articleId).ToImmutableList();
+            Store.SetState(state);
+        }
+        _isLoadingAll = false;
+        this.StateHasChanged();
+        if (shouldRedirect)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task OnSectionEditConfirm(long sectionId, string title)
+    {
+        _isLoadingAll = true;
+        var state = Store.GetState<ClientState>();
+        var section = state.Sections.First(e => e.Id == sectionId);
+        section.Name = title;
+        var result = await _sectionService.Edit(section);
+        if (result.ResultObject)
+        {
+            state.Sections = state.Sections.Where(e => e.Id != sectionId).ToImmutableList();
+            state.Sections = state.Sections.Add(section);
+            Store.SetState(state);
+        }
+        _isLoadingAll     = false;
+        _editingSectionId = -1;
+        this.StateHasChanged();
+    }
+
+    private async Task OnSectionDelete(long sectionId)
+    {
+        _isLoadingAll = true;
+        var result    = await _sectionService.Delete(sectionId);
+        if (result.ResultObject)
+        {
+            var state = Store.GetState<ClientState>();
+            state.Articles = state.Articles?.Where(e => e.SectionId != sectionId)?.ToImmutableList() ?? ImmutableList<ArticleDto>.Empty;
+            state.Sections = state.Sections?.Where(e => e.Id != sectionId)?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
+            Store.SetState(state);
+        }
+        _isLoadingAll = false;
+        this.StateHasChanged();
+    }
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
     }
 
-    private List<SectionDto> Sections => Store.GetState<ClientState>().Sections;
+    private ImmutableList<SectionDto> Sections => Store.GetState<ClientState>().Sections;
+
+    private void Create(long sectionId)
+    {
+        NavigationManager.NavigateTo($"/Section/{sectionId}/Create");
+    }
 
     private async Task LoadArticlesForSections(long sectionId)
     {
         // if clicked from the already expanded section, collapse it
-        if (sectionId == expandedSectionId)
+        if (sectionId == ExpandedSectionId)
         {
-            expandedSectionId       = -1;
-            expandedSectionArticles = null;
-            isLoadingArticles       = false;
+            ExpandedSectionId  = -1;
+            IsLoadingArticles = false;
             return;
         }
 
-        expandedSectionId = sectionId;
-        isLoadingArticles = true;
-        var result = await _articleService.Index(expandedSectionId);
-        if (result.HasErrorsOrResultIsNull())
+        ExpandedSectionId = sectionId;
+        IsLoadingArticles = true;
+
+        var existingArticles = Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == sectionId)?.ToList();
+        if (existingArticles != null && existingArticles.Any())
         {
-            expandedSectionArticles = new List<ArticleDto>();
-            isLoadingArticles       = false;
+            IsLoadingArticles = false;
             return;
         }
-        expandedSectionArticles = result.ResultObject.ToList();
-        isLoadingArticles       = false;
+
+        var result = await _articleService.Index(ExpandedSectionId);
+        if (result.HasErrorsOrResultIsNull())
+        {
+            IsLoadingArticles = false;
+            return;
+        }
+
+        // update shared state
+        var state = Store.GetState<ClientState>();
+        state.Articles = state.Articles.AddRange(result.ResultObject);
+        Store.SetState(state);
+        IsLoadingArticles = false;
     }
 
     private async Task LoadSections()
     {
         var result = await _sectionService.Index();
         var state = Store.GetState<ClientState>();
-        state.Sections = result.ResultObject?.ToList() ?? new List<SectionDto>();
+        state.Sections = result.ResultObject?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
         Store.SetState(state);
+    }
+
+    protected override void OnInitialized()
+    {
+        Store.GetState<ClientState>().RegisterNavMenuComponent(this);
     }
 
     protected override async Task OnInitializedAsync()
     {
-        _sectionService = new SectionService(_navigationManager);
-        _articleService = new ArticleService(_navigationManager);
+        _sectionService = new SectionService(NavigationManager);
+        _articleService = new ArticleService(NavigationManager);
         await LoadSections();
     }
 

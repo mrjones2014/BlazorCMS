@@ -18,6 +18,7 @@ namespace BlazorCMS.Client
                     typeof(Startup).GetTypeInfo().Assembly,
                 });
             services.AddTransient<ClientState>();
+            services.AddBlazorContextMenu();
         }
 
         public void Configure(IComponentsApplicationBuilder app)

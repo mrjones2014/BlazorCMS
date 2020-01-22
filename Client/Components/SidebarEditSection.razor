@@ -1,0 +1,47 @@
+<input
+    id="section-edit-input"
+    type="text"
+    class="form-control"
+    placeholder="Section Title"
+    @bind-value="@Title"
+    @bind-value:event="oninput"
+    @onblur="@OnSaveCallback"/>
+
+@code {
+
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; }
+
+    [Parameter]
+    public long SectionId { get; set; }
+
+    [Parameter]
+    public string InitialTitle { get; set; }
+
+    [Parameter]
+    public Func<long, string, Task> OnSave { get; set; }
+
+    private string Title { get; set; }
+
+    private void OnSaveCallback()
+    {
+        OnSave(SectionId, Title);
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        Title = InitialTitle;
+        return base.OnParametersSetAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // use JS interop API to call a JS function to focus the input element on first render
+            JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.focus", "#section-edit-input");
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+}

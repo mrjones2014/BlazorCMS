@@ -1,0 +1,78 @@
+@using System.ComponentModel
+@using BlazorCMS.Shared.Dtos
+<ContextMenu Id="@GetMenuId(GetId(), Type ?? SidebarContextMenuType.SECTION)">
+    @if (ShowEdit.HasValue && ShowEdit.Value)
+    {
+        <Item OnClick="@OnEditCallback">
+            <i class="oi oi-pencil"></i>
+            &nbsp;Edit
+        </Item>
+    }
+    <Item OnClick="@OnDeleteCallback">
+        <i class="oi oi-trash"></i>
+        &nbsp;Delete
+    </Item>
+</ContextMenu>
+
+@code {
+
+    public enum SidebarContextMenuType
+    {
+        SECTION,
+        ARTICLE,
+    }
+
+    public static string GetMenuId(long id, SidebarContextMenuType type = SidebarContextMenuType.SECTION) => $"SidebarContextMenu-{type}-{id}";
+
+    [Parameter]
+    public Action<long>? OnEdit { get; set; }
+
+    [Parameter]
+    public Func<long, Task> OnDelete { get; set; }
+
+    [Parameter]
+    public SectionDto? Section { get; set; }
+
+    [Parameter]
+    public ArticleDto? Article { get; set; }
+
+    [Parameter]
+    public SidebarContextMenuType? Type { get; set; }
+
+    [Parameter]
+    public bool? ShowEdit { get; set; }
+
+    private void OnEditCallback()
+    {
+        if (OnEdit != null)
+        {
+            OnEdit(GetId());
+        }
+    }
+
+    private void OnDeleteCallback()
+    {
+        OnDelete(GetId());
+    }
+
+    private long GetId()
+    {
+        switch (Type)
+        {
+            case SidebarContextMenuType.ARTICLE:
+                return Article?.Id ?? -1;
+            case SidebarContextMenuType.SECTION:
+                return Section?.Id ?? -1;
+            default:
+                return -1;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        ShowEdit ??= true;
+        Type ??= SidebarContextMenuType.SECTION;
+        base.OnInitialized();
+    }
+
+}

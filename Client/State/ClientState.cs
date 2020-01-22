@@ -1,27 +1,56 @@
-using System;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
+using BlazorCMS.Client.Shared;
 using BlazorCMS.Shared.Dtos;
 using BlazorState;
 
 namespace BlazorCMS.Client.State
 {
-    public class ClientState : IState
+    public class ClientState : State<ClientState>
     {
-        public List<SectionDto> Sections { get; set; }
-        public List<ArticleDto> Articles { get; set; }
+        #region Properties
 
-        public List<ArticleDto> GetArticlesBySectionId(long sectionId)
+        private NavMenu _sidebarReference = null;
+
+        private ImmutableList<ArticleDto> _articles;
+        public ImmutableList<ArticleDto> Articles
         {
-            return Articles?.Where(e => e.SectionId == sectionId)?.ToList();
+            get => _articles;
+            set => _articles = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        public void Initialize()
+        private ImmutableList<SectionDto> _sections;
+        public ImmutableList<SectionDto> Sections
         {
-            Sections = new List<SectionDto>();
-            Articles = new List<ArticleDto>();
+            get => _sections;
+            set => _sections = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        public Guid Guid { get; }
+        public long             ExpandedSectionId      { get; set; }
+        public bool             SidebarLoadingArticles { get; set; }
+
+        #endregion Properties
+
+        #region Public Methods
+
+        public override void Initialize()
+        {
+            Sections               = ImmutableList<SectionDto>.Empty;
+            Articles               = ImmutableList<ArticleDto>.Empty;
+            ExpandedSectionId      = -1;
+            SidebarLoadingArticles = false;
+        }
+
+        public void RegisterNavMenuComponent(NavMenu menu)
+        {
+            _sidebarReference = menu;
+        }
+
+        public void UpdateNavMenu()
+        {
+            _sidebarReference.Update();
+        }
+
+        #endregion Public Methods
     }
 }

@@ -1,10 +1,14 @@
 # BlazorCMS
-A (very) simple CMS to evaluate Microsoft's Blazor WASM framework.
 
-In this tutorial, we'll take a look at Microsoft's Blazor framework, with the WebAssembly option.
-We'll build a (very) simple CMS, with a .NET Core hosted backend.
+[Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor) is a framework for building client-side applications with C#.
+There are two different variations of Blazor; Blazor-Server, in which C# processing is performed on the server and the results
+are sent to the client via a websocket connection, or Blazor-Wasm, which actually ships a full WebAssembly .NET runtime to the browser. 
+
+Let's build a (very) simple CMS using Blazor-Wasm, with a .NET Core hosted backend.
 
 All of the code related to this article can be found [here](https://github.com/andCulture/BlazorCMS).
+
+Note: `using` import statements are omitted here for brevity.
 
 To start, you will need to install the [dotnet 3.1.0-preview4 CLI](https://dotnet.microsoft.com/download/dotnet-core/3.1).
 
@@ -25,7 +29,7 @@ Let's add some data. For this, we'll use Entity Framework Core with a Sqlite dat
 `dotnet add package Microsoft.EntityFrameworkCore.Sqlite`;
 
 Let's add some models. In this project, we'll have `Section`s and `Article`s. Add these models in the `Server` project under a `Data/Models` directory.
-We'll also use an andculture open-source project, AndcultureCode.CSharp.Conductors, in this project:
+We'll also use an andculture open-source project, [AndcultureCode.CSharp.Conductors](https://github.com/AndcultureCode/AndcultureCode.CSharp.Conductors), in this project:
 
 `dotnet add package AndcultureCode.CSharp.Conductors` 
 
@@ -192,7 +196,7 @@ namespace BlazorCMS.Shared.Dtos
 }
 ```
 
-We'll use the AutoMapper package to automatically map our models to our DTOs. Add this package to your `Server` project.
+We'll use the [AutoMapper](https://automapper.org/) package to automatically map our models to our DTOs. Add this package to your `Server` project.
 
 `dotnet add package AutoMapper`
 
@@ -297,10 +301,10 @@ namespace BlazorCMS.Server.Controllers
 
         #endregion Constructor
 
-        #region POST
+        #region PUT
 
-        [HttpPost]
-        public IActionResult Post([FromBody] SectionDto section)
+        [HttpPut]
+        public IActionResult Put([FromBody] SectionDto section)
         {
             var newSection = new Section
             {
@@ -315,13 +319,14 @@ namespace BlazorCMS.Server.Controllers
             return Ok(_mapper.Map<SectionDto>(createResult.ResultObject), null);
         }
 
-        #endregion POST
+        #endregion PUT
 
-        #region PATCH
+        #region POST
 
-        [HttpPatch]
-        public IActionResult Patch([FromBody] SectionDto section)
+        [HttpPost("{sectionId:long}")]
+        public IActionResult Post([FromRoute] long sectionId, [FromBody] SectionDto section)
         {
+            section.Id = sectionId;
             var getResult = _readConductor.FindById(section.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
@@ -340,7 +345,7 @@ namespace BlazorCMS.Server.Controllers
             return Ok(true, null);
         }
 
-        #endregion PATCH
+        #endregion POST
 
         #region GET
 
@@ -393,21 +398,11 @@ namespace BlazorCMS.Server.Controllers
         #endregion DELETE
     }
 }
+
 ```
 
 `ArticlesController.cs`
 ```c#
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
-using AndcultureCode.CSharp.Core.Extensions;
-using AndcultureCode.CSharp.Core.Interfaces.Conductors;
-using AutoMapper;
-using BlazorCMS.Server.Data.Models;
-using BlazorCMS.Shared.Dtos;
-using Microsoft.AspNetCore.Mvc;
-
 namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
@@ -443,10 +438,10 @@ namespace BlazorCMS.Server.Controllers
 
         #endregion Constructor
 
-        #region POST
+        #region PUT
 
-        [HttpPost]
-        public IActionResult Post([FromBody] ArticleDto article)
+        [HttpPut]
+        public IActionResult Put([FromBody] ArticleDto article)
         {
             var newArticle = new Article
             {
@@ -463,13 +458,14 @@ namespace BlazorCMS.Server.Controllers
             return Ok(createResult.ResultObject, null);
         }
 
-        #endregion POST
+        #endregion PUT
 
-        #region PATCH
+        #region POST
 
-        [HttpPatch]
-        public IActionResult Patch([FromBody] ArticleDto article)
+        [HttpPost("{articleId:long}")]
+        public IActionResult Post([FromRoute] long articleId, [FromBody] ArticleDto article)
         {
+            article.Id = articleId;
             var getResult = _readConductor.FindById(article.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
@@ -489,7 +485,7 @@ namespace BlazorCMS.Server.Controllers
             return Ok(true, null);
         }
 
-        #endregion PATCH
+        #endregion Post
 
         #region GET
 
@@ -612,42 +608,91 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 Now, you should be able to run the app (`dotnet run` in the `Server` directory), and navigate to `http://localhost:5000/api/sections` and see a JSON response
 containing our seeded `Section`. Now that our API is done, we can start building the frontend.
 
-Let's add the `Blazor-State` package to the `Client` project.
+Let's add the [Blazor-State](https://timewarpengineering.github.io/blazor-state/), [Blazor.ContextMenu](https://github.com/stavroskasidis/BlazorContextMenu),
+and [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) packages to the `Client` project.
 
 `dotnet add package Blazor-State`
 
-Let's add our state object now. In a new `State` directory, add the following file:
+`dotnet add package Blazor.ContextMenu`
+
+`dotnet add package System.Collections.Immutable`
+
+Blazor is still in preview, so you may experience some issues, such as needing to call `this.StateHasChanged()` within a component to get it to
+re-render. For this reason, we need a way for other components to update the nav bar when a new section or article is created.
+
+Create a new abstract class in a new `State` directory:
+
+`UpdatableComponent.cs`
+```c#
+namespace BlazorCMS.Client.State
+{
+    public abstract class UpdatableComponent : BlazorStateComponent
+    {
+        public void Update()
+        {
+            this.StateHasChanged();
+        }
+    }
+}
+```
+
+Then create your state object in the same directory:
 
 `ClientState.cs`
 ```c#
 namespace BlazorCMS.Client.State
 {
-    public class ClientState : IState
+    public class ClientState : State<ClientState>
     {
-        public List<SectionDto> Sections { get; set; }
-        public List<ArticleDto> Articles { get; set; }
+        #region Properties
 
-        public List<ArticleDto> GetArticlesBySectionId(long sectionId)
+        private NavMenu _sidebarReference = null;
+
+        private ImmutableList<ArticleDto> _articles;
+        public ImmutableList<ArticleDto> Articles
         {
-            return Articles?.Where(e => e.SectionId == sectionId)?.ToList();
+            get => _articles;
+            set => _articles = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        public void Initialize()
+        private ImmutableList<SectionDto> _sections;
+        public ImmutableList<SectionDto> Sections
         {
-            Sections = new List<SectionDto>();
-            Articles = new List<ArticleDto>();
+            get => _sections;
+            set => _sections = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        public Guid Guid { get; }
+        public long             ExpandedSectionId      { get; set; }
+        public bool             SidebarLoadingArticles { get; set; }
+
+        #endregion Properties
+
+        #region Public Methods
+
+        public override void Initialize()
+        {
+            Sections               = ImmutableList<SectionDto>.Empty;
+            Articles               = ImmutableList<ArticleDto>.Empty;
+            ExpandedSectionId      = -1;
+            SidebarLoadingArticles = false;
+        }
+
+        public void RegisterNavMenuComponent(NavMenu menu)
+        {
+            _sidebarReference = menu;
+        }
+
+        public void UpdateNavMenu()
+        {
+            _sidebarReference.Update();
+        }
+
+        #endregion Public Methods
     }
 }
 ```
 
-Now we'll need an HTTP client to implement client side services.
-
-`dotnet add package Microsoft.AspNetCore.Blazor.HttpClient`
-
-Now add a service class under a new `Services`.
+Now we'll need to add client-side services to use our API. Create your services in a `Services` directory.
 
 `Service.cs`
 ```c#
@@ -668,6 +713,60 @@ namespace BlazorCMS.Client.Services
 }
 ```
 
+`ArticleService.cs`
+```c#
+namespace BlazorCMS.Client.Services
+{
+    public class ArticleService : Service
+    {
+        public ArticleService(NavigationManager manager) : base(manager)
+        {
+        }
+
+        public async Task<IResult<ArticleDto[]>> Index(long sectionId)
+        {
+            return await _client.GetJsonAsync<Result<ArticleDto[]>>($"/api/sections/{sectionId}/articles");
+        }
+
+        public async Task<IResult<bool>> Post(ArticleDto article)
+        {
+            return await _client.PostJsonAsync<Result<bool>>($"/api/sections/{article.SectionId}/articles/{article.Id}", article);
+        }
+
+        public async Task<IResult<ArticleDto>> Put(ArticleDto article)
+        {
+            return await _client.PutJsonAsync<Result<ArticleDto>>($"/api/sections/{article.SectionId}/articles", article);
+        }
+        public async Task<IResult<bool>> Delete(long sectionId, long articleId)
+        {
+            var result = await _client.DeleteAsync($"/api/sections/{sectionId}/articles/{articleId}");
+            if (result.IsSuccessStatusCode)
+            {
+                return new Result<bool>
+                {
+                    ResultObject = true,
+                    Errors       = null
+                };
+            }
+
+            return new Result<bool>
+            {
+                ResultObject = false,
+                Errors = new List<IError>
+                {
+                    new Error
+                    {
+                        ErrorType = ErrorType.Error,
+                        Key       = "DeleteError",
+                        Message   = "Failed to delete section."
+                    }
+                }
+            };
+        }
+    }
+}
+```
+
 `SectionService.cs`
 ```c#
 namespace BlazorCMS.Client.Services
@@ -682,149 +781,853 @@ namespace BlazorCMS.Client.Services
         {
             return await _client.GetJsonAsync<Result<SectionDto[]>>("/api/sections");
         }
+
+        public async Task<IResult<bool>> Delete(long sectionId)
+        {
+            var result = await _client.DeleteAsync($"/api/sections/{sectionId}");
+            if (result.IsSuccessStatusCode)
+            {
+                return new Result<bool>
+                {
+                    ResultObject = true,
+                    Errors       = null
+                };
+            }
+
+            return new Result<bool>
+            {
+                ResultObject = false,
+                Errors       = new List<IError>
+                {
+                    new Error
+                    {
+                        ErrorType = ErrorType.Error,
+                        Key       = "DeleteError",
+                        Message   = "Failed to delete section."
+                    }
+                }
+            };
+        }
+
+        public async Task<IResult<bool>> Edit(SectionDto section)
+        {
+            return await _client.PostJsonAsync<Result<bool>>($"/api/sections/{section.Id}", section);
+        }
+
+        public async Task<IResult<SectionDto>> Create(SectionDto section)
+        {
+            return await _client.PutJsonAsync<Result<SectionDto>>("/api/sections", section);
+        }
     }
 }
 ```
 
-Now modify the `NavMenu.razor` to index and show the available sections in the sidebar.
+Let's build some components that we'll use to customize the nav bar. Let's start with a loading indicator, using [SpinKit](https://tobiasahlin.com/spinkit/).
+Choose your favorite variation and copy the markup and css into your project.
+
+`Loading.razor`
+```razor
+@namespace BlazorCMS.Client.Components
+
+<div class="@SpinnerClass">
+    <div class="rect1"></div>
+    <div class="rect2"></div>
+    <div class="rect3"></div>
+    <div class="rect4"></div>
+    <div class="rect5"></div>
+</div>
+
+@code {
+
+    [Parameter]
+    public bool Light { get; set; }
+
+    private string SpinnerClass => Light ? "spinner light" : "spinner";
+
+}
+```
+
+`Loading.css`
+```css
+.spinner.light > div {
+    background-color: white;
+}
+/* the rest is copy/pasted; omitted for brevity */
+```
+
+Now the context menu (so we can right-click to edit or delete things):
+
+`SidebarContextMenu.razor`
+```razor
+<ContextMenu Id="@GetMenuId(GetId(), Type ?? SidebarContextMenuType.SECTION)">
+    @if (ShowEdit.HasValue && ShowEdit.Value)
+    {
+        <Item OnClick="@OnEditCallback">
+            <i class="oi oi-pencil"></i>
+            &nbsp;Edit
+        </Item>
+    }
+    <Item OnClick="@OnDeleteCallback">
+        <i class="oi oi-trash"></i>
+        &nbsp;Delete
+    </Item>
+</ContextMenu>
+
+@code {
+
+    public enum SidebarContextMenuType
+    {
+        SECTION,
+        ARTICLE,
+    }
+
+    public static string GetMenuId(long id, SidebarContextMenuType type = SidebarContextMenuType.SECTION) => $"SidebarContextMenu-{type}-{id}";
+
+    [Parameter]
+    public Action<long>? OnEdit { get; set; }
+
+    [Parameter]
+    public Func<long, Task> OnDelete { get; set; }
+
+    [Parameter]
+    public SectionDto? Section { get; set; }
+
+    [Parameter]
+    public ArticleDto? Article { get; set; }
+
+    [Parameter]
+    public SidebarContextMenuType? Type { get; set; }
+
+    [Parameter]
+    public bool? ShowEdit { get; set; }
+
+    private void OnEditCallback()
+    {
+        if (OnEdit != null)
+        {
+            OnEdit(GetId());
+        }
+    }
+
+    private void OnDeleteCallback()
+    {
+        OnDelete(GetId());
+    }
+
+    private long GetId()
+    {
+        switch (Type)
+        {
+            case SidebarContextMenuType.ARTICLE:
+                return Article?.Id ?? -1;
+            case SidebarContextMenuType.SECTION:
+                return Section?.Id ?? -1;
+            default:
+                return -1;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        ShowEdit ??= true;
+        Type ??= SidebarContextMenuType.SECTION;
+        base.OnInitialized();
+    }
+
+}
+```
+
+And finally, a section create/edit form component:
+
+`SidebarEditSection.razor`
+```razor
+<input
+    id="section-edit-input"
+    type="text"
+    class="form-control"
+    placeholder="Section Title"
+    @bind-value="@Title"
+    @bind-value:event="oninput"
+    @onblur="@OnSaveCallback"/>
+
+@code {
+
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; }
+
+    [Parameter]
+    public long SectionId { get; set; }
+
+    [Parameter]
+    public string InitialTitle { get; set; }
+
+    [Parameter]
+    public Func<long, string, Task> OnSave { get; set; }
+
+    private string Title { get; set; }
+
+    private void OnSaveCallback()
+    {
+        OnSave(SectionId, Title);
+    }
+
+    protected override Task OnParametersSetAsync()
+    {
+        Title = InitialTitle;
+        return base.OnParametersSetAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.focus", "#section-edit-input");
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+}
+```
+
+Now we can start customizing the nav bar. Open `NavMenu.razor` and edit the markup to add our sections and articles to the sidebar:
 
 ```razor
-@foreach (var section in Sections)
-{
+<ul class="nav flex-column">
     <li class="nav-item px-3">
-        <span class="oi oi-plus" aria-hidden="true"></span> @section.Name
+        <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <span class="oi oi-home" aria-hidden="true"></span> Home
+        </NavLink>
     </li>
-}
-...
+    @if (_isLoadingAll)
+    {
+        <Loading Light="@true"/>
+    }
+    else
+    {
+        <li class="nav-item px-3">
+            <button type="button" class="btn btn-success w-100" @onclick="@OnSectionCreate">
+                Create Section&nbsp;<i class="oi oi-plus"></i>
+            </button>
+        </li>
+        @foreach (var section in Sections)
+        {
+            <li class="nav-item px-3">
+                @if (_editingSectionId == section.Id)
+                {
+                    <SidebarEditSection
+                        SectionId="@section.Id"
+                        InitialTitle="@section.Name"
+                        OnSave="@OnSectionEditConfirm"/>
+                }
+                else
+                {
+                    <span @onclick="@(() => LoadArticlesForSections(section.Id))">
+                        <ContextMenuTrigger MenuId="@(SidebarContextMenu.GetMenuId(section.Id))">
+                            <NavLink class="nav-link">
+                                <span class="oi oi-book" aria-hidden="true"></span> @section.Name
+                            </NavLink>
+                        </ContextMenuTrigger>
+                        <SidebarContextMenu Section="@section" OnEdit="@OnSectionEdit" OnDelete="@OnSectionDelete"/>
+                    </span>
+                }
+                @if (ExpandedSectionId == section.Id)
+                {
+                    @if (IsLoadingArticles)
+                    {
+                        <Loading Light="@true"/>
+                    }
+                    else
+                    {
+                        <ul class="nav flex-column sub-menu">
+                            @foreach (var article in ExpandedSectionArticles)
+                            {
+                                <li class="nav-item px-3">
+                                    <ContextMenuTrigger MenuId="@SidebarContextMenu.GetMenuId(article.Id, SidebarContextMenu.SidebarContextMenuType.ARTICLE)">
+                                        <NavLink class="nav-link" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
+                                            <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
+                                        </NavLink>
+                                    </ContextMenuTrigger>
+                                    <SidebarContextMenu Article="@article" OnDelete="@OnArticleDelete" Type="@SidebarContextMenu.SidebarContextMenuType.ARTICLE" ShowEdit="@false"/>
+                                </li>
+                            }
+                            <li class="nav-item px-3">
+                                <button type="button" class="btn btn-success w-100" @onclick="@(() => Create(section.Id))">
+                                    Create Article&nbsp;<i class="oi oi-plus"></i>
+                                </button>
+                            </li>
+                        </ul>
+                    }
+                }
+            </li>
+        }
+        @if (_showSectionCreate)
+        {
+            <li class="nav-item px-3">
+                <SidebarEditSection
+                    SectionId="@(-1)"
+                    InitialTitle=""
+                    OnSave="@OnSectionCreateConfirm"/>
+            </li>
+        }
+    }
+</ul>
+```
+
+Now let's add some Javascript functions to showcase Javascript interop, and do some things with the DOM that aren't yet supported.
+Create a file under `wwwroot` called `BlazorCmsFunctions.js` and import it in the `<head>` of your `index.html`.
+
+`BlazorCmsFunctions.js`
+```javascript
+window.BlazorCmsJsFunctions = {
+    focus: function (selector) {
+        var el = document.querySelector(selector);
+        if (el != null && el.focus != null) {
+            el.focus();
+        }
+    },
+    hasClass: function (selector, className) {
+        var el = document.querySelector(selector);
+        if (el == null || el.classList == null) {
+            return false;
+        }
+
+        return el.classList.contains(className);
+    }
+};
+```
+
+Now we can add the code for our `NavMenu.razor` component:
+
+```razor
 @code {
     [Inject]
-    private NavigationManager _navigationManager { get; set; }
-    private SectionService _sectionService       { get; set; }
+    private NavigationManager NavigationManager { get; set; }
+    [Inject]
+    private IJSRuntime JsRuntime { get; set; }
 
-    private List<SectionDto> Sections => List<SectionDto> Sections => Store.GetState<ClientState>().Sections;
+    private SectionService    _sectionService;
+    private ArticleService    _articleService;
+    private bool collapseNavMenu = true;
+    private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private bool _isLoadingAll = false;
+    private long _editingSectionId = -1;
+    private bool _showSectionCreate = false;
+
+    private long ExpandedSectionId
+    {
+        get => Store.GetState<ClientState>().ExpandedSectionId;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.ExpandedSectionId = value;
+            Store.SetState(state);
+        }
+    }
+
+    private List<ArticleDto> ExpandedSectionArticles
+    {
+        get => Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == ExpandedSectionId).ToList() ?? new List<ArticleDto>();
+    }
+
+    private bool IsLoadingArticles
+    {
+        get => Store.GetState<ClientState>().SidebarLoadingArticles;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.SidebarLoadingArticles = value;
+            Store.SetState(state);
+        }
+    }
+
+    private void OnSectionEdit(long sectionId)
+    {
+        _editingSectionId = sectionId;
+        this.StateHasChanged();
+    }
+
+    private void OnSectionCreate()
+    {
+        _showSectionCreate = true;
+    }
+
+    private async Task OnSectionCreateConfirm(long sectionId, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            _showSectionCreate = false;
+            this.StateHasChanged();
+            return;
+        }
+
+        _isLoadingAll = true;
+        var section   = new SectionDto
+        {
+            Name = title
+        };
+        var state  = Store.GetState<ClientState>();
+        var result = await _sectionService.Create(section);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            state.Sections = state.Sections.Add(result.ResultObject);
+        }
+
+        _isLoadingAll      = false;
+        _showSectionCreate = false;
+        this.StateHasChanged();
+    }
+
+    private async Task OnArticleDelete(long articleId)
+    {
+        _isLoadingAll = true;
+        var shouldRedirect = await JsRuntime.InvokeAsync<bool>("BlazorCmsJsFunctions.hasClass", $"#nav-link-article-{articleId}", "active");
+        Console.WriteLine(shouldRedirect);
+        var state          = Store.GetState<ClientState>();
+        var article        = state.Articles.First(e => e.Id == articleId);
+        var result         = await _articleService.Delete(article.SectionId, articleId);
+        if (result.ResultObject)
+        {
+            state.Articles = state.Articles.Where(e => e.Id != articleId).ToImmutableList();
+            Store.SetState(state);
+        }
+        _isLoadingAll = false;
+        this.StateHasChanged();
+        if (shouldRedirect)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private async Task OnSectionEditConfirm(long sectionId, string title)
+    {
+        _isLoadingAll = true;
+        var state = Store.GetState<ClientState>();
+        var section = state.Sections.First(e => e.Id == sectionId);
+        section.Name = title;
+        var result = await _sectionService.Edit(section);
+        if (result.ResultObject)
+        {
+            state.Sections = state.Sections.Where(e => e.Id != sectionId).ToImmutableList();
+            state.Sections = state.Sections.Add(section);
+            Store.SetState(state);
+        }
+        _isLoadingAll     = false;
+        _editingSectionId = -1;
+        this.StateHasChanged();
+    }
+
+    private async Task OnSectionDelete(long sectionId)
+    {
+        _isLoadingAll = true;
+        var result = await _sectionService.Delete(sectionId);
+        if (result.ResultObject)
+        {
+            var state = Store.GetState<ClientState>();
+            state.Articles = state.Articles?.Where(e => e.SectionId != sectionId)?.ToImmutableList() ?? ImmutableList<ArticleDto>.Empty;
+            state.Sections = state.Sections?.Where(e => e.Id != sectionId)?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
+            Store.SetState(state);
+        }
+        _isLoadingAll = false;
+        this.StateHasChanged();
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private ImmutableList<SectionDto> Sections => Store.GetState<ClientState>().Sections;
+
+    private void Create(long sectionId)
+    {
+        NavigationManager.NavigateTo($"/Section/{sectionId}/Create");
+    }
+
+    private async Task LoadArticlesForSections(long sectionId)
+    {
+        // if clicked from the already expanded section, collapse it
+        if (sectionId == ExpandedSectionId)
+        {
+            ExpandedSectionId  = -1;
+            IsLoadingArticles = false;
+            return;
+        }
+
+        ExpandedSectionId = sectionId;
+        IsLoadingArticles = true;
+
+        var existingArticles = Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == sectionId)?.ToList();
+        if (existingArticles != null && existingArticles.Any())
+        {
+            IsLoadingArticles = false;
+            return;
+        }
+
+        var result = await _articleService.Index(ExpandedSectionId);
+        if (result.HasErrorsOrResultIsNull())
+        {
+            IsLoadingArticles = false;
+            return;
+        }
+
+        // update shared state
+        var state = Store.GetState<ClientState>();
+        state.Articles = state.Articles.AddRange(result.ResultObject);
+        Store.SetState(state);
+        IsLoadingArticles = false;
+    }
 
     private async Task LoadSections()
     {
         var result = await _sectionService.Index();
         var state = Store.GetState<ClientState>();
-        state.Sections = result.ResultObject?.ToList() ?? new List<SectionDto>();
+        state.Sections = result.ResultObject?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
         Store.SetState(state);
+    }
+
+    protected override void OnInitialized()
+    {
+        Store.GetState<ClientState>().RegisterNavMenuComponent(this);
     }
 
     protected override async Task OnInitializedAsync()
     {
-        _sectionService = new SectionService(_navigationManager);
+        _sectionService = new SectionService(NavigationManager);
+        _articleService = new ArticleService(NavigationManager);
         await LoadSections();
     }
+
 }
 ```
 
-Now, if you run the app, you should see the "Hello World!" seeded section appear on the sidebar!
+Writing Blazor components is extremely similar to writing regular old C# code!
 
-Let's work on showing the articles in a section when you select a section. First let's add a loading component to show a loading state.
-We'll base this on [SpinKit](https://tobiasahlin.com/spinkit/). Add a `Components` directory under the `Client` project and add a file called
-`Loading.razor`, and add a `Loading.css` file under `Client/wwwroot/Components`. Choose a loading spinner from SpinKit and
-add the HTML to `Loading.razor` and the CSS to `Loading.css`. Then, in `site.css`, add the following line to the top:
+Now we can work on creating/editing articles. Let's start with a generic markdown component. For this we'll use the
+[MarkDig](https://github.com/lunet-io/markdig) package:
 
-`@import url('Components/Loading.css');`
+`dotnet add package MarkDig`
 
-Next, we'll need an `ArticleService.cs`:
+The component itself is very straightforward.
 
-```c#
-namespace BlazorCMS.Client.Services
-{
-    public class ArticleService : Service
-    {
-        public ArticleService(NavigationManager manager) : base(manager)
-        {
-        }
-
-        public async Task<IResult<ArticleDto[]>> Index(long sectionId)
-        {
-            return await _client.GetJsonAsync<Result<ArticleDto[]>>($"/api/{sectionId}/articles");
-        }
-    }
-}
-```
-
-Then, add it to `NavMenu.razor`:
+`Markdown.razor`
 ```razor
-[Inject]
-private NavigationManager _navigationManager { get; set; }
-private SectionService    _sectionService    { get; set; }
-private ArticleService    _articleService    { get; set; }
-...
-protected override async Task OnInitializedAsync()
-{
-    _sectionService = new SectionService(_navigationManager);
-    _articleService = new ArticleService(_navigationManager);
-    await LoadSections();
+<div class="markdown-container">
+    @GetRenderedMarkdownString()
+</div>
+
+@code {
+
+    [Parameter]
+    public string Content { get; set; }
+
+    private MarkupString GetRenderedMarkdownString() => (MarkupString)Markdig.Markdown.ToHtml(
+        markdown: Content,
+        pipeline: new MarkdownPipelineBuilder().UseAdvancedExtensions().Build()
+    );
+
 }
 ```
 
-Let's add a bit of code to `NavMenu.razor` to expand sections to show articles on click:
+Now we can use this to build our view/create/edit screens. Let's start with the view article screen.
+
+Under the `Pages` directory, add `ArticlePage.razor`:
 
 ```razor
-@foreach (var section in Sections)
+@page "/Section/{SectionId:long}/Article/{ArticleId:long}"
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
 {
-    <li class="nav-item px-3">
-        <span @onclick="@(() => LoadArticlesForSections(section.Id))">
-            <NavLink class="nav-link">
-                <span class="oi oi-book" aria-hidden="true"></span> @section.Name
-            </NavLink>
-        </span>
-        @if (expandedSectionId == section.Id)
-        {
-            @if (expandedSectionArticles == null || isLoadingArticles)
-            {
-                <Loading Light="@true"/>
-            }
-            else
-            {
-                <ul class="nav flex-column sub-menu">
-                    @foreach (var article in expandedSectionArticles)
-                    {
-                        <li class="nav-item px-3">
-                            <NavLink class="nav-link" href="@article.Id">
-                                <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
-                            </NavLink>
-                        </li>
-                    }
-                </ul>
-            }
-        }
-    </li>
+    <h1>
+        @Article.Title
+        <button type="button" class="btn btn-warning float-right" @onclick="Edit">
+            <i class="oi oi-pencil"></i>
+        </button>
+    </h1>
+    <hr/>
+    <Markdown Content="@Article.Body"/>
 }
 
-...
+@code {
 
-private long             expandedSectionId       { get; set; }
-private List<ArticleDto> expandedSectionArticles { get; set; }
-private bool             isLoadingArticles       { get; set; }
+    [Parameter]
+    public long ArticleId { get; set; }
 
-private async Task LoadArticlesForSections(long sectionId)
-{
-    // if clicked from the already expanded section, collapse it
-    if (sectionId == expandedSectionId)
+    [Parameter]
+    public long SectionId { get; set; }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+    private ArticleService    _articleService;
+
+    private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
+
+    private void Edit()
     {
-        expandedSectionId       = -1;
-        expandedSectionArticles = null;
-        isLoadingArticles       = false;
-        return;
+        NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}/Edit");
     }
 
-    expandedSectionId = sectionId;
-    isLoadingArticles = true;
-    var result = await _articleService.Index(expandedSectionId);
-    if (result.HasErrorsOrResultIsNull())
+    protected override void OnInitialized()
     {
-        expandedSectionArticles = new List<ArticleDto>();
-        isLoadingArticles       = false;
-        return;
+        _articleService = new ArticleService(NavigationManager);
     }
-    expandedSectionArticles = result.ResultObject.ToList();
-    isLoadingArticles       = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Article == null)
+        {
+            // populate all the articles for the section so the nav bar updates properly
+            var state                    = Store.GetState<ClientState>();
+            state.ExpandedSectionId      = SectionId;
+            state.SidebarLoadingArticles = true;
+            Store.SetState(state);
+            var result     = await _articleService.Index(SectionId);
+            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+            state.Articles = state.Articles.AddRange(result.ResultObject);
+            state.SidebarLoadingArticles = false;
+            Store.SetState(state);
+            state.UpdateNavMenu();
+        }
+    }
+
 }
 ```
 
-Now clicking a section in the sidebar should briefly show a loading state, and then show the articles in the section.
+For the actual markdown editor, we'll use a package called [BlazorStrap](https://blazorstrap.io/), a Blazor implementation of
+Bootstrap 4 components.
+
+`dotnet add package BlazorStrap`
+
+Now we can use the `BSTabs` components to create a markdown editor with a preview tab. In the `Components` directory, add `Editor.razor`:
+
+```razor
+<input type="text" @bind-value="@Content.Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
+<BSTabGroup class="editor-tabgroup">
+    <BSTabList>
+        <BSTab>
+            <BSTabLabel>Edit</BSTabLabel>
+            <BSTabContent>
+                <textarea
+                    class="editor-textarea form-control"
+                    @bind-value="@Content.Body"
+                    @bind-value:event="oninput"></textarea>
+                <div class="editor-footer">
+                    <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="@OnSaveCallback">
+                        @if (IsLoading)
+                        {
+                            <Loading/>
+                        }
+                        else
+                        {
+                            <span>Save</span>
+                        }
+                    </button>
+                    <button type="button" class="btn btn-secondary" disabled="@IsLoading" @onclick="@OnCancelCallback">Cancel</button>
+                </div>
+            </BSTabContent>
+        </BSTab>
+        <BSTab>
+            <BSTabLabel>Preview</BSTabLabel>
+            <BSTabContent>
+                <Markdown Content="@Content.Body"/>
+            </BSTabContent>
+        </BSTab>
+    </BSTabList>
+    <BSTabSelectedContent/>
+</BSTabGroup>
+
+@code {
+
+    [Inject]
+    IJSRuntime JsRuntime { get; set; }
+
+    [Parameter]
+    public ArticleDto InitialContent { get; set; }
+
+    [Parameter]
+    public Func<ArticleDto, Task> OnSave { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public Action OnCancel { get; set; }
+
+    private ArticleDto Content { get; set; }
+
+    private void OnSaveCallback() => OnSave(Content);
+    private void OnCancelCallback() => OnCancel();
+
+    protected override Task OnParametersSetAsync()
+    {
+        Content       = InitialContent ?? new ArticleDto();
+        Content.Body  = Content.Body?.Trim() ?? "";
+        Content.Title = Content.Title?.Trim() ?? "";
+        return base.OnParametersSetAsync();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.focus", ".form-control.editor-title-input");
+        }
+        return base.OnAfterRenderAsync(firstRender);
+    }
+
+}
+
+```
+
+And use this component to build our edit screen. In the `Pages` directory, add `Edit.razor`:
+
+```razor
+@page "/Section/{SectionId:long}/Article/{ArticleId:long}/Edit"
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
+{
+    <Editor InitialContent="@Article" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
+}
+
+@code {
+
+    [Parameter]
+    public long ArticleId { get; set; }
+
+    [Parameter]
+    public long SectionId { get; set; }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+    private ArticleService    _articleService;
+
+    private bool IsLoading { get; set; }
+    
+    private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
+
+    private async Task OnSave(ArticleDto article)
+    {
+        IsLoading     = true;
+        var result    = await _articleService.Post(article);
+        var state     = Store.GetState<ClientState>();
+        state.ExpandedSectionId = SectionId;
+        Store.SetState(state);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            state.Articles = state.Articles.Where(e => e.Id != article.Id).ToImmutableList();
+            state.Articles = state.Articles.Add(article);
+            Store.SetState(state);
+            NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
+        }
+
+        IsLoading = false;
+
+        state.UpdateNavMenu();
+    }
+
+    private void OnCancel()
+    {
+        NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
+    }
+
+    protected override void OnInitialized()
+    {
+        _articleService = new ArticleService(NavigationManager);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Article == null)
+        {
+            // populate all the articles for the section so the nav bar updates properly
+            var state                    = Store.GetState<ClientState>();
+            state.ExpandedSectionId      = SectionId;
+            state.SidebarLoadingArticles = true;
+            var result                   = await _articleService.Index(SectionId);
+            state.Articles               = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+            state.Articles               = state.Articles.AddRange(result.ResultObject);
+            state.SidebarLoadingArticles = false;
+            Store.SetState(state);
+        }
+    }
+
+}
+``` 
+
+The create screen uses the same markup, but with slightly different initialization and persistence logic:
+
+`Create.razor`
+```razor
+@page "/Section/{SectionId:long}/Create"
+@inherits BlazorState.BlazorStateComponent
+
+...
+
+@code {
+
+    [Parameter]
+    public long SectionId { get; set; }
+
+    private ArticleDto Article = new ArticleDto();
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+    private ArticleService    _articleService;
+
+    private bool IsLoading { get; set; }
+
+    private async Task OnSave(ArticleDto article)
+    {
+        IsLoading  = true;
+        var state  = Store.GetState<ClientState>();
+        var result = await _articleService.Put(Article);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            Article = result.ResultObject;
+            state.Articles = state.Articles.Where(e => e.Id != Article.Id).ToImmutableList();
+            state.Articles = state.Articles.Add(result.ResultObject);
+            Store.SetState(state);
+            NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{Article.Id}");
+        }
+
+        IsLoading = false;
+        state.UpdateNavMenu();
+    }
+
+    private void OnCancel()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async Task PopulateArticlesForSection()
+    {
+        // populate all the articles for the section so the nav bar updates properly
+        var state                    = Store.GetState<ClientState>();
+        state.ExpandedSectionId      = SectionId;
+        state.SidebarLoadingArticles = true;
+        Store.SetState(state);
+        var result     = await _articleService.Index(SectionId);
+        state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+        state.Articles = state.Articles.AddRange(result.ResultObject);
+        state.SidebarLoadingArticles = false;
+        Store.SetState(state);
+        state.UpdateNavMenu();
+    }
+
+    protected override void OnInitialized()
+    {
+        _articleService = new ArticleService(NavigationManager);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var state = Store.GetState<ClientState>();
+        state.ExpandedSectionId = SectionId;
+        Store.SetState(state);
+        await PopulateArticlesForSection();
+    }
+
+}
+```

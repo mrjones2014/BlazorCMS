@@ -1,0 +1,64 @@
+@page "/Section/{SectionId:long}/Article/{ArticleId:long}"
+@using System.Collections.Immutable
+@using BlazorCMS.Client.Services
+@using BlazorCMS.Client.State
+@using BlazorCMS.Shared.Dtos
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
+{
+    <h1>
+        @Article.Title
+        <button type="button" class="btn btn-warning float-right" @onclick="Edit">
+            <i class="oi oi-pencil"></i>
+        </button>
+    </h1>
+    <hr/>
+    <Markdown Content="@Article.Body"/>
+}
+
+@code {
+
+    [Parameter]
+    public long ArticleId { get; set; }
+
+    [Parameter]
+    public long SectionId { get; set; }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+    private ArticleService    _articleService;
+
+    private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
+
+    private void Edit()
+    {
+        NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}/Edit");
+    }
+
+    protected override void OnInitialized()
+    {
+        _articleService = new ArticleService(NavigationManager);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Article != null)
+        {
+            return;
+        }
+
+        // populate all the articles for the section so the nav bar updates properly
+        var state                    = Store.GetState<ClientState>();
+        state.ExpandedSectionId      = SectionId;
+        state.SidebarLoadingArticles = true;
+        Store.SetState(state);
+        var result     = await _articleService.Index(SectionId);
+        state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+        state.Articles = state.Articles.AddRange(result.ResultObject);
+        state.SidebarLoadingArticles = false;
+        Store.SetState(state);
+        state.UpdateNavMenu();
+    }
+
+}

@@ -1,0 +1,81 @@
+@page "/Section/{SectionId:long}/Create"
+@using System.Collections.Immutable
+@using AndcultureCode.CSharp.Core.Extensions
+@using BlazorCMS.Client.Services
+@using BlazorCMS.Client.State
+@using BlazorCMS.Shared.Dtos
+@inherits BlazorState.BlazorStateComponent
+
+@if (Article != null)
+{
+    <Editor InitialContent="@Article" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
+}
+
+@code {
+
+    [Parameter]
+    public long SectionId { get; set; }
+
+    private ArticleDto Article = new ArticleDto();
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+    private ArticleService    _articleService;
+
+    private bool IsLoading { get; set; }
+
+    private async Task OnSave(ArticleDto article)
+    {
+        IsLoading  = true;
+        this.StateHasChanged();
+        article.SectionId = SectionId;
+        var state  = Store.GetState<ClientState>();
+        var result = await _articleService.Put(Article);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            Article = result.ResultObject;
+            state.Articles = state.Articles.Where(e => e.Id != Article.Id).ToImmutableList();
+            state.Articles = state.Articles.Add(result.ResultObject);
+            Store.SetState(state);
+            NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{Article.Id}");
+        }
+
+        IsLoading = false;
+        this.StateHasChanged();
+        state.UpdateNavMenu();
+    }
+
+    private void OnCancel()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private async Task PopulateArticlesForSection()
+    {
+        // populate all the articles for the section so the nav bar updates properly
+        var state                    = Store.GetState<ClientState>();
+        state.ExpandedSectionId      = SectionId;
+        state.SidebarLoadingArticles = true;
+        Store.SetState(state);
+        var result     = await _articleService.Index(SectionId);
+        state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+        state.Articles = state.Articles.AddRange(result.ResultObject);
+        state.SidebarLoadingArticles = false;
+        Store.SetState(state);
+        state.UpdateNavMenu();
+    }
+
+    protected override void OnInitialized()
+    {
+        _articleService = new ArticleService(NavigationManager);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var state = Store.GetState<ClientState>();
+        state.ExpandedSectionId = SectionId;
+        Store.SetState(state);
+        await PopulateArticlesForSection();
+    }
+
+}
