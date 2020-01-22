@@ -6,6 +6,10 @@
     margin-bottom: 15px;
 }
 
+.editor-title-input {
+    margin-bottom: 10px;
+}
+
 .content.px-4 {
     height: calc(100% - 3.75rem);
 }

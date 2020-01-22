@@ -1,0 +1,36 @@
+@using BlazorCMS.Shared.Dtos
+<ContextMenu Id="@(GetMenuId(Section.Id))">
+    <Item OnClick="@OnEditCallback">
+        <i class="oi oi-pencil"></i>
+        &nbsp;Edit
+    </Item>
+    <Item OnClick="@OnDeleteCallback">
+        <i class="oi oi-trash"></i>
+        &nbsp;Delete
+    </Item>
+</ContextMenu>
+
+@code {
+
+    public static string GetMenuId(long sectionId) => $"SidebarContextMenu-{sectionId}";
+
+    [Parameter]
+    public Action<long> OnEditSection { get; set; }
+
+    [Parameter]
+    public Func<long, Task> OnDeleteSection { get; set; }
+
+    [Parameter]
+    public SectionDto Section { get; set; }
+
+    private void OnEditCallback()
+    {
+        OnEditSection(Section.Id);
+    }
+
+    private void OnDeleteCallback()
+    {
+        OnDeleteSection(Section.Id);
+    }
+
+}

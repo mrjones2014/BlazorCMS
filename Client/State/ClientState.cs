@@ -1,8 +1,9 @@
-using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using BlazorCMS.Client.Shared;
 using BlazorCMS.Shared.Dtos;
 using BlazorState;
-using Microsoft.AspNetCore.Components;
 
 namespace BlazorCMS.Client.State
 {
@@ -10,51 +11,24 @@ namespace BlazorCMS.Client.State
     {
         #region Properties
 
-        private List<SectionDto> _sections;
-        public List<SectionDto> Sections
-        {
-            get => _sections;
-            set
-            {
-                _sections = value;
-                _subscribers.ForEach(c => c.Update());
-            }
-        }
+        private NavMenu _sidebarReference = null;
 
-        private List<ArticleDto> _articles;
-        public List<ArticleDto> Articles
+        private ImmutableList<ArticleDto> _articles;
+        public ImmutableList<ArticleDto> Articles
         {
             get => _articles;
-            set
-            {
-                _articles = value;
-                _subscribers.ForEach(c => c.Update());
-            }
+            set => _articles = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        private long _expandedSectionId;
-        public long ExpandedSectionId
+        private ImmutableList<SectionDto> _sections;
+        public ImmutableList<SectionDto> Sections
         {
-            get => _expandedSectionId;
-            set
-            {
-                _expandedSectionId = value;
-                _subscribers.ForEach(c => c.Update());
-            }
+            get => _sections;
+            set => _sections = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        private bool _sidebarLoadingArticles;
-        public bool SidebarLoadingArticles
-        {
-            get => _sidebarLoadingArticles;
-            set
-            {
-                _sidebarLoadingArticles = value;
-                _subscribers.ForEach(c => c.Update());
-            }
-        }
-
-        private List<UpdatableComponent> _subscribers = new List<UpdatableComponent>();
+        public long             ExpandedSectionId      { get; set; }
+        public bool             SidebarLoadingArticles { get; set; }
 
         #endregion Properties
 
@@ -62,15 +36,20 @@ namespace BlazorCMS.Client.State
 
         public override void Initialize()
         {
-            Sections               = new List<SectionDto>();
-            Articles               = new List<ArticleDto>();
+            Sections               = ImmutableList<SectionDto>.Empty;
+            Articles               = ImmutableList<ArticleDto>.Empty;
             ExpandedSectionId      = -1;
             SidebarLoadingArticles = false;
         }
 
-        public void RegisterSubscriber(UpdatableComponent component)
+        public void RegisterNavMenuComponent(NavMenu menu)
         {
-            _subscribers.Add(component);
+            _sidebarReference = menu;
+        }
+
+        public void UpdateNavMenu()
+        {
+            _sidebarReference.Update();
         }
 
         #endregion Public Methods

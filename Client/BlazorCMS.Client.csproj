@@ -8,15 +8,21 @@
 
   <ItemGroup>
     <PackageReference Include="Blazor-State" Version="3.0.1" />
+    <PackageReference Include="Blazor.ContextMenu" Version="1.6.0" />
     <PackageReference Include="BlazorStrap" Version="1.1.101" />
     <PackageReference Include="Markdig" Version="0.18.1" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor" Version="3.1.0-preview4.19579.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.Build" Version="3.1.0-preview4.19579.2" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.HttpClient" Version="3.1.0-preview4.19579.2" />
     <PackageReference Include="Microsoft.AspNetCore.Blazor.DevServer" Version="3.1.0-preview4.19579.2" PrivateAssets="all" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shared\BlazorCMS.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="wwwroot\BlazorContextMenu\blazorContextMenu.css" />
+    <_ContentIncludedByDefault Remove="wwwroot\BlazorContextMenu\blazorContextMenu.js" />
   </ItemGroup>
 
 </Project>

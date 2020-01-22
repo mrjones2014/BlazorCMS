@@ -61,7 +61,7 @@ namespace BlazorCMS.Server.Controllers
                 return InternalError<ArticleDto>(null, createResult.Errors);
             }
 
-            return Ok(createResult.ResultObject, null);
+            return Ok(_mapper.Map<ArticleDto>(createResult.ResultObject), null);
         }
 
         #endregion PUT

@@ -1,4 +1,5 @@
 @page "/Section/{SectionId:long}/Article/{ArticleId:long}/Edit"
+@using System.Collections.Immutable
 @using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
@@ -7,7 +8,7 @@
 
 @if (Article != null)
 {
-    <h1>Editing: @Article.Title</h1>
+    <input type="text" @bind-value="@Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
     <Editor InitialContent="@Article.Body" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
 }
 
@@ -25,26 +26,31 @@
 
     private bool IsLoading { get; set; }
 
+    private string Title { get; set; }
+
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
 
     private async Task OnSave(string newContent)
     {
         IsLoading = true;
-        var article = Article;
-        article.Body = newContent;
-        var result = await _articleService.Post(article);
-        var state = Store.GetState<ClientState>();
+        var article   = Article;
+        article.Body  = newContent;
+        article.Title = Title;
+        var result    = await _articleService.Post(article);
+        var state     = Store.GetState<ClientState>();
         state.ExpandedSectionId = SectionId;
         Store.SetState(state);
         if (!result.HasErrorsOrResultIsNull())
         {
-            state.Articles = state.Articles.Where(e => e.Id != article.Id).ToList();
-            state.Articles.Add(article);
+            state.Articles = state.Articles.Where(e => e.Id != article.Id).ToImmutableList();
+            state.Articles = state.Articles.Add(article);
             Store.SetState(state);
             NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
         }
 
         IsLoading = false;
+
+        state.UpdateNavMenu();
     }
 
     private void OnCancel()
@@ -65,17 +71,14 @@
             var state                    = Store.GetState<ClientState>();
             state.ExpandedSectionId      = SectionId;
             state.SidebarLoadingArticles = true;
-            var result = await _articleService.Index(SectionId);
-            if (state.Articles == null)
-            {
-                state.Articles = new List<ArticleDto>();
-            }
-
-            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToList();
-            state.Articles.AddRange(result.ResultObject);
+            var result     = await _articleService.Index(SectionId);
+            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+            state.Articles = state.Articles.AddRange(result.ResultObject);
             state.SidebarLoadingArticles = false;
             Store.SetState(state);
         }
+
+        Title = Article?.Title ?? "";
     }
 
 }

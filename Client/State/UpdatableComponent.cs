@@ -1,6 +1,6 @@
 using BlazorState;
 
-namespace BlazorCMS.Client
+namespace BlazorCMS.Client.State
 {
     public abstract class UpdatableComponent : BlazorStateComponent
     {

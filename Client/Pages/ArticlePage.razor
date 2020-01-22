@@ -1,4 +1,5 @@
 @page "/Section/{SectionId:long}/Article/{ArticleId:long}"
+@using System.Collections.Immutable
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
@@ -49,16 +50,12 @@
             state.ExpandedSectionId      = SectionId;
             state.SidebarLoadingArticles = true;
             Store.SetState(state);
-            var result = await _articleService.Index(SectionId);
-            if (state.Articles == null)
-            {
-                state.Articles = new List<ArticleDto>();
-            }
-
-            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToList();
-            state.Articles.AddRange(result.ResultObject);
+            var result     = await _articleService.Index(SectionId);
+            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+            state.Articles = state.Articles.AddRange(result.ResultObject);
             state.SidebarLoadingArticles = false;
             Store.SetState(state);
+            state.UpdateNavMenu();
         }
     }
 
