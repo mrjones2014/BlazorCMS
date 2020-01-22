@@ -19,10 +19,10 @@
 @code {
 
     [Parameter]
-    public long? ArticleId { get; set; }
+    public long ArticleId { get; set; }
 
     [Parameter]
-    public long? SectionId { get; set; }
+    public long SectionId { get; set; }
 
     [Inject]
     private NavigationManager NavigationManager { get; set; }
@@ -35,23 +35,29 @@
         NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}/Edit");
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        SectionId ??= 1;
-        ArticleId ??= 1;
         _articleService = new ArticleService(NavigationManager);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
         if (Article == null)
         {
             // populate all the articles for the section so the nav bar updates properly
-            var result = await _articleService.Index(SectionId.Value);
-            var state  = Store.GetState<ClientState>();
+            var state                    = Store.GetState<ClientState>();
+            state.ExpandedSectionId      = SectionId;
+            state.SidebarLoadingArticles = true;
+            Store.SetState(state);
+            var result = await _articleService.Index(SectionId);
             if (state.Articles == null)
             {
                 state.Articles = new List<ArticleDto>();
             }
 
-            state.Articles = state.Articles.Where(e => e.SectionId != SectionId.Value).ToList();
+            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToList();
             state.Articles.AddRange(result.ResultObject);
+            state.SidebarLoadingArticles = false;
             Store.SetState(state);
         }
     }

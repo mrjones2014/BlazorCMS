@@ -62,8 +62,10 @@
         if (Article == null)
         {
             // populate all the articles for the section so the nav bar updates properly
+            var state                    = Store.GetState<ClientState>();
+            state.ExpandedSectionId      = SectionId;
+            state.SidebarLoadingArticles = true;
             var result = await _articleService.Index(SectionId);
-            var state  = Store.GetState<ClientState>();
             if (state.Articles == null)
             {
                 state.Articles = new List<ArticleDto>();
@@ -71,7 +73,7 @@
 
             state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToList();
             state.Articles.AddRange(result.ResultObject);
-            state.ExpandedSectionId = SectionId;
+            state.SidebarLoadingArticles = false;
             Store.SetState(state);
         }
     }

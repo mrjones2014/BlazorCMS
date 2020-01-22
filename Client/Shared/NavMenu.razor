@@ -1,9 +1,8 @@
-﻿@using System.Text.RegularExpressions
-@using AndcultureCode.CSharp.Core.Extensions
+﻿@using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
-@inherits BlazorState.BlazorStateComponent
+@inherits UpdatableComponent
 
 <div class="top-row pl-4 navbar navbar-dark">
     <a class="navbar-brand" href="">BlazorCMS</a>
@@ -29,14 +28,14 @@
                 </span>
                 @if (ExpandedSectionId == section.Id)
                 {
-                    @if (_expandedSectionArticles == null || _isLoadingArticles)
+                    @if (IsLoadingArticles)
                     {
                         <Loading Light="@true"/>
                     }
                     else
                     {
                         <ul class="nav flex-column sub-menu">
-                            @foreach (var article in _expandedSectionArticles)
+                            @foreach (var article in ExpandedSectionArticles)
                             {
                                 <li class="nav-item px-3">
                                     <NavLink class="nav-link" href="@($"/Section/{section.Id}/Article/{article.Id}")">
@@ -76,8 +75,21 @@
         }
     }
 
-    private List<ArticleDto> _expandedSectionArticles = null;
-    private bool             _isLoadingArticles       = false;
+    private List<ArticleDto> ExpandedSectionArticles
+    {
+        get => Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == ExpandedSectionId).ToList() ?? new List<ArticleDto>();
+    }
+
+    private bool IsLoadingArticles
+    {
+        get => Store.GetState<ClientState>().SidebarLoadingArticles;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.SidebarLoadingArticles = value;
+            Store.SetState(state);
+        }
+    }
 
     private void ToggleNavMenu()
     {
@@ -96,32 +108,27 @@
         // if clicked from the already expanded section, collapse it
         if (sectionId == ExpandedSectionId)
         {
-            ExpandedSectionId       = -1;
-            _expandedSectionArticles = null;
-            _isLoadingArticles       = false;
+            ExpandedSectionId  = -1;
+            IsLoadingArticles = false;
             return;
         }
 
         ExpandedSectionId = sectionId;
-        _isLoadingArticles = true;
+        IsLoadingArticles = true;
 
         var existingArticles = Store.GetState<ClientState>().Articles?.Where(e => e.SectionId == sectionId)?.ToList();
         if (existingArticles != null && existingArticles.Any())
         {
-            _expandedSectionArticles = existingArticles;
-            _isLoadingArticles       = false;
+            IsLoadingArticles = false;
             return;
         }
 
         var result = await _articleService.Index(ExpandedSectionId);
         if (result.HasErrorsOrResultIsNull())
         {
-            _expandedSectionArticles = new List<ArticleDto>();
-            _isLoadingArticles       = false;
+            IsLoadingArticles = false;
             return;
         }
-        _expandedSectionArticles = result.ResultObject.ToList();
-        _isLoadingArticles       = false;
 
         // update shared state
         var state = Store.GetState<ClientState>();
@@ -130,6 +137,7 @@
             state.Articles = new List<ArticleDto>();
         }
         state.Articles.AddRange(result.ResultObject);
+        IsLoadingArticles = false;
     }
 
     private async Task LoadSections()
@@ -138,6 +146,11 @@
         var state = Store.GetState<ClientState>();
         state.Sections = result.ResultObject?.ToList() ?? new List<SectionDto>();
         Store.SetState(state);
+    }
+
+    protected override void OnInitialized()
+    {
+        Store.GetState<ClientState>().RegisterSubscriber(this);
     }
 
     protected override async Task OnInitializedAsync()
