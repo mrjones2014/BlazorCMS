@@ -25,6 +25,11 @@
         }
         else
         {
+            <li class="nav-item px-3">
+                <button type="button" class="btn btn-success w-100" @onclick="@OnSectionCreate">
+                    Create Section&nbsp;<i class="oi oi-plus"></i>
+                </button>
+            </li>
             @foreach (var section in Sections)
             {
                 <li class="nav-item px-3">
@@ -76,6 +81,15 @@
                     }
                 </li>
             }
+            @if (_showSectionCreate)
+            {
+                <li class="nav-item px-3">
+                    <SidebarEditSection
+                        SectionId="@(-1)"
+                        InitialTitle=""
+                        OnSave="@OnSectionCreateConfirm"/>
+                </li>
+            }
         }
     </ul>
 </div>
@@ -93,6 +107,7 @@
 
     private bool _isLoadingAll = false;
     private long _editingSectionId = -1;
+    private bool _showSectionCreate = false;
 
     private long ExpandedSectionId
     {
@@ -124,6 +139,37 @@
     private void OnSectionEdit(long sectionId)
     {
         _editingSectionId = sectionId;
+        this.StateHasChanged();
+    }
+
+    private void OnSectionCreate()
+    {
+        _showSectionCreate = true;
+    }
+
+    private async Task OnSectionCreateConfirm(long sectionId, string title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            _showSectionCreate = false;
+            this.StateHasChanged();
+            return;
+        }
+
+        _isLoadingAll = true;
+        var section   = new SectionDto
+        {
+            Name = title
+        };
+        var state  = Store.GetState<ClientState>();
+        var result = await _sectionService.Create(section);
+        if (!result.HasErrorsOrResultIsNull())
+        {
+            state.Sections = state.Sections.Add(result.ResultObject);
+        }
+
+        _isLoadingAll      = false;
+        _showSectionCreate = false;
         this.StateHasChanged();
     }
 

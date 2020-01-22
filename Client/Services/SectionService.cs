@@ -50,5 +50,10 @@ namespace BlazorCMS.Client.Services
         {
             return await _client.PostJsonAsync<Result<bool>>($"/api/sections/{section.Id}", section);
         }
+
+        public async Task<IResult<SectionDto>> Create(SectionDto section)
+        {
+            return await _client.PutJsonAsync<Result<SectionDto>>("/api/sections", section);
+        }
     }
 }
