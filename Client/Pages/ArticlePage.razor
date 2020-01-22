@@ -43,20 +43,22 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Article == null)
+        if (Article != null)
         {
-            // populate all the articles for the section so the nav bar updates properly
-            var state                    = Store.GetState<ClientState>();
-            state.ExpandedSectionId      = SectionId;
-            state.SidebarLoadingArticles = true;
-            Store.SetState(state);
-            var result     = await _articleService.Index(SectionId);
-            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
-            state.Articles = state.Articles.AddRange(result.ResultObject);
-            state.SidebarLoadingArticles = false;
-            Store.SetState(state);
-            state.UpdateNavMenu();
+            return;
         }
+
+        // populate all the articles for the section so the nav bar updates properly
+        var state                    = Store.GetState<ClientState>();
+        state.ExpandedSectionId      = SectionId;
+        state.SidebarLoadingArticles = true;
+        Store.SetState(state);
+        var result     = await _articleService.Index(SectionId);
+        state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+        state.Articles = state.Articles.AddRange(result.ResultObject);
+        state.SidebarLoadingArticles = false;
+        Store.SetState(state);
+        state.UpdateNavMenu();
     }
 
 }

@@ -105,8 +105,8 @@
     private bool collapseNavMenu = true;
     private string NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
-    private bool _isLoadingAll = false;
-    private long _editingSectionId = -1;
+    private bool _isLoadingAll      = false;
+    private long _editingSectionId  = -1;
     private bool _showSectionCreate = false;
 
     private long ExpandedSectionId
@@ -215,7 +215,7 @@
     private async Task OnSectionDelete(long sectionId)
     {
         _isLoadingAll = true;
-        var result = await _sectionService.Delete(sectionId);
+        var result    = await _sectionService.Delete(sectionId);
         if (result.ResultObject)
         {
             var state = Store.GetState<ClientState>();

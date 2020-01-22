@@ -60,8 +60,11 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Article == null)
+        if (Article != null)
         {
+            return;
+        }
+
             // populate all the articles for the section so the nav bar updates properly
             var state                    = Store.GetState<ClientState>();
             state.ExpandedSectionId      = SectionId;
@@ -71,7 +74,6 @@
             state.Articles               = state.Articles.AddRange(result.ResultObject);
             state.SidebarLoadingArticles = false;
             Store.SetState(state);
-        }
     }
 
 }
