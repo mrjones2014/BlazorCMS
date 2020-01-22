@@ -71,9 +71,9 @@
             var state                    = Store.GetState<ClientState>();
             state.ExpandedSectionId      = SectionId;
             state.SidebarLoadingArticles = true;
-            var result     = await _articleService.Index(SectionId);
-            state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
-            state.Articles = state.Articles.AddRange(result.ResultObject);
+            var result                   = await _articleService.Index(SectionId);
+            state.Articles               = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+            state.Articles               = state.Articles.AddRange(result.ResultObject);
             state.SidebarLoadingArticles = false;
             Store.SetState(state);
         }
