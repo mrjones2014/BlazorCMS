@@ -1439,6 +1439,9 @@ Now we can use the `BSTabs` components to create a markdown editor with a previe
 
 @code {
 
+    [Inject]
+    IJSRuntime JsRuntime { get; set; }
+
     [Parameter]
     public ArticleDto InitialContent { get; set; }
 
@@ -1462,6 +1465,15 @@ Now we can use the `BSTabs` components to create a markdown editor with a previe
         Content.Body  = Content.Body?.Trim() ?? "";
         Content.Title = Content.Title?.Trim() ?? "";
         return base.OnParametersSetAsync();
+    }
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.focus", ".form-control.editor-title-input");
+        }
+        return base.OnAfterRenderAsync(firstRender);
     }
 
 }
