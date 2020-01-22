@@ -1402,6 +1402,7 @@ Bootstrap 4 components.
 Now we can use the `BSTabs` components to create a markdown editor with a preview tab. In the `Components` directory, add `Editor.razor`:
 
 ```razor
+<input type="text" @bind-value="@Content.Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
 <BSTabGroup class="editor-tabgroup">
     <BSTabList>
         <BSTab>
@@ -1409,11 +1410,10 @@ Now we can use the `BSTabs` components to create a markdown editor with a previe
             <BSTabContent>
                 <textarea
                     class="editor-textarea form-control"
-                    @bind-value="@Content"
-                    @bind-value:event="oninput">
-                </textarea>
+                    @bind-value="@Content.Body"
+                    @bind-value:event="oninput"></textarea>
                 <div class="editor-footer">
-                    <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="OnSaveCallback">
+                    <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="@OnSaveCallback">
                         @if (IsLoading)
                         {
                             <Loading/>
@@ -1423,14 +1423,14 @@ Now we can use the `BSTabs` components to create a markdown editor with a previe
                             <span>Save</span>
                         }
                     </button>
-                    <button type="button" class="btn btn-secondary" disabled="@IsLoading" @onclick="OnCancelCallback">Cancel</button>
+                    <button type="button" class="btn btn-secondary" disabled="@IsLoading" @onclick="@OnCancelCallback">Cancel</button>
                 </div>
             </BSTabContent>
         </BSTab>
         <BSTab>
             <BSTabLabel>Preview</BSTabLabel>
             <BSTabContent>
-                <Markdown Content="@Content"/>
+                <Markdown Content="@Content.Body"/>
             </BSTabContent>
         </BSTab>
     </BSTabList>
@@ -1440,10 +1440,10 @@ Now we can use the `BSTabs` components to create a markdown editor with a previe
 @code {
 
     [Parameter]
-    public string InitialContent { get; set; }
+    public ArticleDto InitialContent { get; set; }
 
     [Parameter]
-    public Func<string, Task> OnSave { get; set; }
+    public Func<ArticleDto, Task> OnSave { get; set; }
 
     [Parameter]
     public bool IsLoading { get; set; }
@@ -1451,17 +1451,21 @@ Now we can use the `BSTabs` components to create a markdown editor with a previe
     [Parameter]
     public Action OnCancel { get; set; }
 
-    private string Content { get; set; }
+    private ArticleDto Content { get; set; }
 
     private void OnSaveCallback() => OnSave(Content);
     private void OnCancelCallback() => OnCancel();
 
-    protected override void OnInitialized()
+    protected override Task OnParametersSetAsync()
     {
-        Content = InitialContent ?? "";
+        Content       = InitialContent ?? new ArticleDto();
+        Content.Body  = Content.Body?.Trim() ?? "";
+        Content.Title = Content.Title?.Trim() ?? "";
+        return base.OnParametersSetAsync();
     }
 
 }
+
 ```
 
 And use this component to build our edit screen. In the `Pages` directory, add `Edit.razor`:
@@ -1472,8 +1476,7 @@ And use this component to build our edit screen. In the `Pages` directory, add `
 
 @if (Article != null)
 {
-    <input type="text" @bind-value="@Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
-    <Editor InitialContent="@Article.Body" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
+    <Editor InitialContent="@Article" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
 }
 
 @code {
@@ -1489,17 +1492,12 @@ And use this component to build our edit screen. In the `Pages` directory, add `
     private ArticleService    _articleService;
 
     private bool IsLoading { get; set; }
-
-    private string Title { get; set; }
-
+    
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
 
-    private async Task OnSave(string newContent)
+    private async Task OnSave(ArticleDto article)
     {
-        IsLoading = true;
-        var article   = Article;
-        article.Body  = newContent;
-        article.Title = Title;
+        IsLoading     = true;
         var result    = await _articleService.Post(article);
         var state     = Store.GetState<ClientState>();
         state.ExpandedSectionId = SectionId;
@@ -1541,8 +1539,6 @@ And use this component to build our edit screen. In the `Pages` directory, add `
             state.SidebarLoadingArticles = false;
             Store.SetState(state);
         }
-
-        Title = Article?.Title ?? "";
     }
 
 }
@@ -1570,12 +1566,10 @@ The create screen uses the same markup, but with slightly different initializati
 
     private bool IsLoading { get; set; }
 
-    private async Task OnSave(string newContent)
+    private async Task OnSave(ArticleDto article)
     {
-        IsLoading         = true;
-        Article.Body      = newContent;
-        Article.SectionId = SectionId;
-        var state = Store.GetState<ClientState>();
+        IsLoading  = true;
+        var state  = Store.GetState<ClientState>();
         var result = await _articleService.Put(Article);
         if (!result.HasErrorsOrResultIsNull())
         {

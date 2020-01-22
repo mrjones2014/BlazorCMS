@@ -8,8 +8,7 @@
 
 @if (Article != null)
 {
-    <input type="text" @bind-value="@Article.Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
-    <Editor InitialContent="@Article.Body" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
+    <Editor InitialContent="@Article" OnSave="@OnSave" OnCancel="@OnCancel" IsLoading="@IsLoading"/>
 }
 
 @code {
@@ -25,12 +24,10 @@
 
     private bool IsLoading { get; set; }
 
-    private async Task OnSave(string newContent)
+    private async Task OnSave(ArticleDto article)
     {
-        IsLoading         = true;
-        Article.Body      = newContent;
-        Article.SectionId = SectionId;
-        var state = Store.GetState<ClientState>();
+        IsLoading  = true;
+        var state  = Store.GetState<ClientState>();
         var result = await _articleService.Put(Article);
         if (!result.HasErrorsOrResultIsNull())
         {
