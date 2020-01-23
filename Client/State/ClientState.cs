@@ -60,6 +60,12 @@ namespace BlazorCMS.Client.State
             await _sidebarReference.UpdateAndReloadData();
         }
 
+        public void ShowSidebarCreateSectionForm()
+        {
+            _sidebarReference.OnSectionCreate();
+            _sidebarReference.Update();
+        }
+
         #endregion Public Methods
     }
 }

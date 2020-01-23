@@ -1,11 +1,20 @@
 ﻿@page "/home"
+@using System.Threading
 @using BlazorCMS.Client.State
 @inherits BlazorState.BlazorStateComponent
 
-<div class="home-icon-container">
-    <h1>Welcome to BlazorCMS!</h1>
-    <span class="oi oi-book"></span>
-    <span class="oi oi-fire"></span>
+<div class="home-container">
+    @if (_initialized)
+    {
+        <h1>Welcome to BlazorCMS!</h1>
+        <button type="button" class="btn btn-success btn-lg home-create-section-btn" @onclick="@CreateSection">
+            Create Section&nbsp;<i class="oi oi-plus"></i>
+        </button>
+    }
+    else
+    {
+        <Loading/>
+    }
 </div>
 
 @code {
@@ -13,9 +22,28 @@
     [Inject]
     private NavigationManager NavigationManager { get; set; }
 
+    private bool _initialized = false;
+
+    private void CreateSection()
+    {
+        Store.GetState<ClientState>().ShowSidebarCreateSectionForm();
+    }
+
     protected override void OnInitialized()
     {
-        this.GoToLoginIfUnauthorized(NavigationManager);
+        var didRedirect = this.GoToLoginIfUnauthorized(NavigationManager);
+        if (!didRedirect)
+        {
+            var state = Store.GetState<ClientState>();
+            if (state.Articles?.Any() ?? false)
+            {
+                var firstArticle = state.Articles.First();
+                NavigationManager.NavigateTo($"/Section/{firstArticle.SectionId}/Article/{firstArticle.Id}");
+            }
+        }
+
+        _initialized = true;
+        this.StateHasChanged();
     }
 
 }
