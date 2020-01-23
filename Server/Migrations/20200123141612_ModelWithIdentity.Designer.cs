@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorCMS.Server.Migrations
 {
     [DbContext(typeof(BlazorCmsContext))]
-    [Migration("20200123124246_AddIdentityFramework")]
-    partial class AddIdentityFramework
+    [Migration("20200123141612_ModelWithIdentity")]
+    partial class ModelWithIdentity
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {

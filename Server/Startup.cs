@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -22,6 +23,8 @@ namespace BlazorCMS.Server
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.UseEnvFile();
+
             services.AddMvc();
             services.AddResponseCompression(opts =>
             {
@@ -29,7 +32,13 @@ namespace BlazorCMS.Server
                     new[] { "application/octet-stream" });
             });
 
-            services.AddDbContext<BlazorCmsContext>(options => options.UseSqlite("Data Source=BlazorCMS.db"));
+            var dbString = DotNetEnv.Env.GetString(EnvironmentVariables.DATABASE_CONNECTION_STRING);
+            if (string.IsNullOrWhiteSpace(dbString))
+            {
+                throw new ApplicationException("Failed to read db connection string from environment.");
+            }
+
+            services.AddDbContext<BlazorCmsContext>(options => options.UseSqlite(dbString));
 
             services.AddScoped<IRepository<Section>, Repository<Section>>();
             services.AddScoped<IRepository<Article>, Repository<Article>>();
@@ -84,6 +93,10 @@ namespace BlazorCMS.Server
                 using (var dbContext = serviceScope.ServiceProvider.GetService<BlazorCmsContext>())
                 {
                     dbContext.Database.Migrate();
+                    using (var userManager = serviceScope.ServiceProvider.GetService<UserManager<User>>())
+                    {
+                        dbContext.SeedUser(userManager);
+                    }
                     dbContext.SeedHelloWorldSectionAndArticle();
                 }
             }
