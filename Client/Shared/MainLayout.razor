@@ -8,8 +8,11 @@
 
 <div class="main">
     <div class="top-row px-4">
-        <a href="https://github.com/andCulture/BlazorCMS" target="_blank">GitHub Repo</a>
-        <button type="button" class="btn btn-primary ml-md-auto" @onclick="@Logout">Logout</button>
+        <a href="https://github.com/andCulture/BlazorCMS" class="mr-md-auto" target="_blank">GitHub Repo</a>
+        @if (!IsLoginScreen)
+        {
+            <button type="button" class="btn btn-primary ml-md-auto" @onclick="@Logout">Logout</button>
+        }
     </div>
 
     <div class="content px-4">
@@ -28,6 +31,8 @@
     private IToastService ToastService { get; set; }
 
     private UserService _userService;
+
+    private bool IsLoginScreen => NavigationManager.Uri == NavigationManager.BaseUri;
 
     private async Task Logout()
     {
