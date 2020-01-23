@@ -14,27 +14,27 @@ namespace BlazorCMS.Client.Services
         {
         }
 
-        public async Task<IResult<SectionDto[]>> Index()
+        public async Task<ResultDto<SectionDto[]>> Index()
         {
-            return await _client.GetJsonAsync<Result<SectionDto[]>>("/api/sections");
+            return await _client.GetJsonAsync<ResultDto<SectionDto[]>>("/api/sections");
         }
 
-        public async Task<IResult<bool>> Delete(long sectionId)
+        public async Task<ResultDto<bool>> Delete(long sectionId)
         {
             var result = await _client.DeleteAsync($"/api/sections/{sectionId}");
             if (result.IsSuccessStatusCode)
             {
-                return new Result<bool>
+                return new ResultDto<bool>
                 {
                     ResultObject = true,
                     Errors       = null
                 };
             }
 
-            return new Result<bool>
+            return new ResultDto<bool>
             {
                 ResultObject = false,
-                Errors       = new List<IError>
+                Errors       = new List<Error>
                 {
                     new Error
                     {
@@ -46,14 +46,14 @@ namespace BlazorCMS.Client.Services
             };
         }
 
-        public async Task<IResult<bool>> Edit(SectionDto section)
+        public async Task<ResultDto<bool>> Edit(SectionDto section)
         {
-            return await _client.PostJsonAsync<Result<bool>>($"/api/sections/{section.Id}", section);
+            return await _client.PostJsonAsync<ResultDto<bool>>($"/api/sections/{section.Id}", section);
         }
 
-        public async Task<IResult<SectionDto>> Create(SectionDto section)
+        public async Task<ResultDto<SectionDto>> Create(SectionDto section)
         {
-            return await _client.PutJsonAsync<Result<SectionDto>>("/api/sections", section);
+            return await _client.PutJsonAsync<ResultDto<SectionDto>>("/api/sections", section);
         }
     }
 }

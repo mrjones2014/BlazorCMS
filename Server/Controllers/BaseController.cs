@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using AndcultureCode.CSharp.Core.Interfaces;
 using AndcultureCode.CSharp.Core.Models;
 using BlazorCMS.Server.Data.Models;
@@ -14,6 +15,7 @@ namespace BlazorCMS.Server.Controllers
         #region Properties
 
         protected readonly UserManager<User> _userManager;
+        public virtual ClaimsPrincipal ClaimsPrincipal { get; set; }
 
         private User _currentUser;
         protected User CurrentUser
@@ -26,7 +28,12 @@ namespace BlazorCMS.Server.Controllers
                 }
                 try
                 {
-                    _currentUser = _userManager.GetUserAsync(HttpContext.User).Result;
+                    var userName = User.Identity?.Name;
+                    if (string.IsNullOrWhiteSpace(userName))
+                    {
+                        return _currentUser;
+                    }
+                    _currentUser = _userManager.FindByNameAsync(userName).Result;
                     return _currentUser;
                 }
                 catch (Exception ex)

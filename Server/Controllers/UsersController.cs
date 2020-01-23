@@ -5,6 +5,7 @@ using AndcultureCode.CSharp.Core.Enumerations;
 using AndcultureCode.CSharp.Core.Interfaces;
 using AndcultureCode.CSharp.Core.Models;
 using AutoMapper;
+using BlazorCMS.Server.Data;
 using BlazorCMS.Server.Data.Models;
 using BlazorCMS.Shared.Dtos;
 using BlazorCMS.Shared.Forms;
@@ -16,6 +17,7 @@ namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
     [Route("/api/users")]
+    [AllowAnonymous]
     public class UsersController : BaseController
     {
         #region Properties
@@ -42,12 +44,12 @@ namespace BlazorCMS.Server.Controllers
 
         [HttpPost]
         [AllowAnonymous]
-        [Route("/register")]
+        [Route("register")]
         public IActionResult Register([FromBody] RegisterForm form)
         {
             if (form.Password != form.PasswordConfirm)
             {
-                return BadRequest<UserDto>(null, new List<IError>
+                return Ok<UserDto>(null, new List<IError>
                 {
                     new Error
                     {
@@ -62,8 +64,8 @@ namespace BlazorCMS.Server.Controllers
             var result = _userManager.CreateAsync(user, form.Password).Result;
             if (result.Succeeded)
             {
-                result = _userManager.AddToRoleAsync(user, "User").Result;
-                return Ok(_mapper.Map<UserDto>(user));
+                result = _userManager.AddToRoleAsync(user, Roles.USER).Result;
+                return Ok(_mapper.Map<UserDto>(user), null);
             }
 
             var errors = result.Errors.Select(
@@ -74,7 +76,7 @@ namespace BlazorCMS.Server.Controllers
                     Message   = e.Description
                 }
             );
-            return InternalError<UserDto>(null, errors);
+            return Ok<UserDto>(null, errors);
         }
 
         #endregion Register
@@ -84,7 +86,7 @@ namespace BlazorCMS.Server.Controllers
         [HttpPost]
         [AllowAnonymous]
         [Route("login")]
-        public IActionResult Login([FromBody] LoginForm form)
+        public async Task<IActionResult> Login([FromBody] LoginForm form)
         {
             if (CurrentUser != null)
             {
@@ -98,12 +100,16 @@ namespace BlazorCMS.Server.Controllers
                 lockoutOnFailure: false
             ).Result;
 
-            if (loginResult.Succeeded)
+            var user = _userManager.FindByNameAsync(form.UserName).Result;
+
+            if (loginResult.Succeeded && user != null)
             {
+                await _signInManager.CreateUserPrincipalAsync(user);
+                await _signInManager.RefreshSignInAsync(user);
                 return Ok(loginResult.Succeeded, null);
             }
 
-            return BadRequest<bool>(false, new List<IError>
+            return Ok(false, new List<Error>
             {
                 new Error
                 {
@@ -119,7 +125,8 @@ namespace BlazorCMS.Server.Controllers
         #region CurrentUser
 
         [HttpGet]
-        public IActionResult GetCurrentUSer()
+        [Route("current")]
+        public IActionResult GetCurrentUser()
         {
             if (CurrentUser == null)
             {

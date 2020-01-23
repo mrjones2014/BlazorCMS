@@ -1,0 +1,178 @@
+@page "/"
+@using AndcultureCode.CSharp.Core.Extensions
+@using AndcultureCode.CSharp.Extensions
+@using BlazorCMS.Client.Services
+@using BlazorCMS.Client.State
+@using BlazorCMS.Shared.Forms
+@using BlazorStrap
+
+@inherits BlazorState.BlazorStateComponent
+
+<div class="login-page-container">
+    @if (_loginChecked)
+    {
+        <BSCard>
+            <BSCard CardType="@CardType.Header">
+                @(_isRegisterForm ? "Register" : "Login")
+            </BSCard>
+            <BSCard CardType="@CardType.Body">
+                <div class="form-group">
+                    <div class="input-group">
+                        <input class="form-control" type="text" @bind-value="@_userName" @bind-value:event="oninput" placeholder="Username" disabled="@_isLoading"/>
+                    </div>
+                    <div class="input-group">
+                        <input class="form-control" type="password" @bind-value="@_password" @bind-value:event="oninput" placeholder="Password" disabled="@_isLoading"/>
+                    </div>
+                    @if (_isRegisterForm)
+                    {
+                        <div class="input-group">
+                            <input class="form-control" type="password" @bind-value="@_passwordConfirm" @bind-value:event="oninput" placeholder="Confirm password" disabled="@_isLoading"/>
+                        </div>
+                        <div class="input-group">
+                            <a class="register-form-link" href="#" @onclick="@ToggleShowRegisterForm">Already have an account? Login here.</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="input-group">
+                            <a class="register-form-link" href="#" @onclick="@ToggleShowRegisterForm">Don't have an account? Register here.</a>
+                        </div>
+                    }
+                    @if (_errors != null)
+                    {
+                        <div class="login-errors-container">
+                            @foreach (var error in _errors)
+                            {
+                                <p><i class="oi oi-info"></i>&nbsp; @error</p>
+                            }
+                        </div>
+                    }
+                </div>
+            </BSCard>
+            <BSCard CardType="@CardType.Footer">
+                <button type="button" class="btn btn-success" @onclick="@Submit" disabled="@_isLoading">
+                    @if (_isLoading)
+                    {
+                        <Loading/>
+                    }
+                    else
+                    {
+                        @(_isRegisterForm ? "Register" : "Login")
+                    }
+                    </button>
+            </BSCard>
+        </BSCard>
+    }
+    else
+    {
+        <Loading/>
+    }
+</div>
+
+@code {
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    private UserService _userService;
+
+    private bool _loginChecked   = false;
+    private bool _isRegisterForm = false;
+    private List<string> _errors = null;
+
+    private string _userName        = "";
+    private string _password        = "";
+    private string _passwordConfirm = "";
+
+    private bool _isLoading = false;
+
+    private async Task Submit()
+    {
+        if (_isRegisterForm)
+        {
+            await Register();
+            return;
+        }
+
+        await Login();
+    }
+
+    private async Task Register()
+    {
+        var form = new RegisterForm
+        {
+            UserName        = _userName,
+            Password        = _password,
+            PasswordConfirm = _passwordConfirm
+        };
+
+        var registerResult = await _userService.Register(form);
+        if (registerResult.HasErrorsOrResultIsNull())
+        {
+            _errors = registerResult.Errors?.Select(e => e.Message)?.ToList() ?? new List<string>();
+            if (_errors.IsEmpty())
+            {
+                _errors.Add("Failed to register user.");
+            }
+            return;
+        }
+
+        await Login(form.UserName, form.Password);
+    }
+
+    private async Task Login(string userName = null, string password = null)
+    {
+        var form = new LoginForm
+        {
+            UserName = userName ?? _userName,
+            Password = password ?? _password,
+        };
+
+        var loginResult = await _userService.Login(form);
+        if (loginResult.HasErrorsOrResultIsNull())
+        {
+            _errors = loginResult.Errors.Select(e => e.Message).ToList();
+            return;
+        }
+
+        var currentUserResult = await _userService.GetCurrentUser();
+        if (currentUserResult.HasErrorsOrResultIsNull())
+        {
+            _errors = currentUserResult.Errors?.Select(e => e.Message)?.ToList() ?? new List<string>();
+            if (_errors.IsEmpty())
+            {
+                _errors.Add("Failed to retrieve user.");
+            }
+            return;
+        }
+
+        var state = Store.GetState<ClientState>();
+        state.CurrentUser = currentUserResult.ResultObject;
+        Store.SetState(state);
+        NavigationManager.NavigateTo("/home");
+    }
+
+    private void ToggleShowRegisterForm()
+    {
+        _isRegisterForm = !_isRegisterForm;
+    }
+
+    private async Task RedirectIfLoggedIn()
+    {
+        var currentUserResult = await _userService.GetCurrentUser();
+        if (!currentUserResult.HasErrorsOrResultIsNull())
+        {
+            NavigationManager.NavigateTo("/home");
+            return;
+        }
+        _loginChecked = true;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _userService = new UserService(NavigationManager);
+        await RedirectIfLoggedIn();
+        await base.OnInitializedAsync();
+    }
+
+}

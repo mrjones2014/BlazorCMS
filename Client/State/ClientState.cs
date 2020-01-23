@@ -29,6 +29,8 @@ namespace BlazorCMS.Client.State
         public long             ExpandedSectionId      { get; set; }
         public bool             SidebarLoadingArticles { get; set; }
 
+        public UserDto          CurrentUser { get; set; }
+
         #endregion Properties
 
         #region Public Methods

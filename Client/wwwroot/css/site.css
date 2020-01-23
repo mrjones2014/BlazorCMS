@@ -3,6 +3,7 @@
 @import url('Components/NavMenu.css');
 @import url('Components/Editor.css');
 @import url('Components/Index.css');
+@import url('Components/Login.css');
 
 .w-100 {
     width: 100%;

@@ -14,36 +14,36 @@ namespace BlazorCMS.Client.Services
         {
         }
 
-        public async Task<IResult<ArticleDto[]>> Index(long sectionId)
+        public async Task<ResultDto<ArticleDto[]>> Index(long sectionId)
         {
-            return await _client.GetJsonAsync<Result<ArticleDto[]>>($"/api/sections/{sectionId}/articles");
+            return await _client.GetJsonAsync<ResultDto<ArticleDto[]>>($"/api/sections/{sectionId}/articles");
         }
 
-        public async Task<IResult<bool>> Post(ArticleDto article)
+        public async Task<ResultDto<bool>> Post(ArticleDto article)
         {
-            return await _client.PostJsonAsync<Result<bool>>($"/api/sections/{article.SectionId}/articles/{article.Id}", article);
+            return await _client.PostJsonAsync<ResultDto<bool>>($"/api/sections/{article.SectionId}/articles/{article.Id}", article);
         }
 
-        public async Task<IResult<ArticleDto>> Put(ArticleDto article)
+        public async Task<ResultDto<ArticleDto>> Put(ArticleDto article)
         {
-            return await _client.PutJsonAsync<Result<ArticleDto>>($"/api/sections/{article.SectionId}/articles", article);
+            return await _client.PutJsonAsync<ResultDto<ArticleDto>>($"/api/sections/{article.SectionId}/articles", article);
         }
-        public async Task<IResult<bool>> Delete(long sectionId, long articleId)
+        public async Task<ResultDto<bool>> Delete(long sectionId, long articleId)
         {
             var result = await _client.DeleteAsync($"/api/sections/{sectionId}/articles/{articleId}");
             if (result.IsSuccessStatusCode)
             {
-                return new Result<bool>
+                return new ResultDto<bool>
                 {
                     ResultObject = true,
                     Errors       = null
                 };
             }
 
-            return new Result<bool>
+            return new ResultDto<bool>
             {
                 ResultObject = false,
-                Errors = new List<IError>
+                Errors = new List<Error>
                 {
                     new Error
                     {

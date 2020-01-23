@@ -7,6 +7,7 @@ using AndcultureCode.CSharp.Core.Interfaces.Conductors;
 using AutoMapper;
 using BlazorCMS.Server.Data.Models;
 using BlazorCMS.Shared.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +15,7 @@ namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
     [Route("/api/sections/{sectionId:long}/articles")]
+    [Authorize]
     public class ArticlesController : BaseController
     {
         #region Properties
@@ -60,7 +62,7 @@ namespace BlazorCMS.Server.Controllers
             var createResult = _createConductor.Create(newArticle);
             if (createResult.HasErrors)
             {
-                return InternalError<ArticleDto>(null, createResult.Errors);
+                return Ok<ArticleDto>(null, createResult.Errors);
             }
 
             return Ok(_mapper.Map<ArticleDto>(createResult.ResultObject), null);
@@ -87,7 +89,7 @@ namespace BlazorCMS.Server.Controllers
             var updateResult = _updateConductor.Update(updatedArticle);
             if (updateResult.HasErrors)
             {
-                return InternalError(updateResult.ResultObject, updateResult.Errors);
+                return Ok(updateResult.ResultObject, updateResult.Errors);
             }
 
             return Ok(true, null);
@@ -133,7 +135,7 @@ namespace BlazorCMS.Server.Controllers
             var deleteResult = _deleteConductor.Delete(id: id, soft: false);
             if (deleteResult.HasErrorsOrResultIsNull())
             {
-                return InternalError(false, deleteResult.Errors);
+                return Ok(false, deleteResult.Errors);
             }
 
             return Ok(deleteResult.ResultObject, deleteResult.Errors);

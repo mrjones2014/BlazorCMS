@@ -5,6 +5,7 @@ using AndcultureCode.CSharp.Core.Interfaces.Conductors;
 using AutoMapper;
 using BlazorCMS.Server.Data.Models;
 using BlazorCMS.Shared.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,6 +13,7 @@ namespace BlazorCMS.Server.Controllers
 {
     [FormatFilter]
     [Route("/api/sections")]
+    [Authorize]
     public class SectionsController : BaseController
     {
         #region Properties
@@ -56,7 +58,7 @@ namespace BlazorCMS.Server.Controllers
             var createResult = _createConductor.Create(newSection);
             if (createResult.HasErrors)
             {
-                return InternalError<SectionDto>(null, createResult.Errors);
+                return Ok<SectionDto>(null, createResult.Errors);
             }
 
             return Ok(_mapper.Map<SectionDto>(createResult.ResultObject), null);
@@ -73,7 +75,7 @@ namespace BlazorCMS.Server.Controllers
             var getResult = _readConductor.FindById(section.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
-                return NotFound(false, getResult.Errors);
+                return Ok(false, getResult.Errors);
             }
 
             var updatedSection  = getResult.ResultObject;
@@ -82,7 +84,7 @@ namespace BlazorCMS.Server.Controllers
             var updateResult = _updateConductor.Update(updatedSection);
             if (updateResult.HasErrors)
             {
-                return InternalError(updateResult.ResultObject, updateResult.Errors);
+                return Ok(updateResult.ResultObject, updateResult.Errors);
             }
 
             return Ok(true, null);
@@ -98,7 +100,7 @@ namespace BlazorCMS.Server.Controllers
             var getResult = _readConductor.FindAll();
             if (getResult.HasErrorsOrResultIsNull())
             {
-                return InternalError<IEnumerable<SectionDto>>(null, getResult.Errors);
+                return Ok<IEnumerable<SectionDto>>(null, getResult.Errors);
             }
 
             return Ok<IEnumerable<SectionDto>>(getResult.ResultObject.Select(e => _mapper.Map<SectionDto>(e)), null);
@@ -110,7 +112,7 @@ namespace BlazorCMS.Server.Controllers
             var getResult = _readConductor.FindById(id);
             if (getResult.HasErrorsOrResultIsNull())
             {
-                return InternalError<SectionDto>(null, getResult.Errors);
+                return Ok<SectionDto>(null, getResult.Errors);
             }
 
             return Ok(_mapper.Map<SectionDto>(getResult.ResultObject), null);
@@ -132,7 +134,7 @@ namespace BlazorCMS.Server.Controllers
             var deleteResult = _deleteConductor.Delete(id: id, soft: false);
             if (deleteResult.HasErrors)
             {
-                return InternalError(deleteResult.ResultObject, deleteResult.Errors);
+                return Ok(deleteResult.ResultObject, deleteResult.Errors);
             }
 
             return Ok(deleteResult.ResultObject, null);

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq;
+using System.Threading.Tasks;
 using AndcultureCode.CSharp.Conductors;
 using AndcultureCode.CSharp.Core.Interfaces.Conductors;
 using AndcultureCode.CSharp.Core.Interfaces.Data;
@@ -65,6 +66,8 @@ namespace BlazorCMS.Server
             services.AddIdentity<User, IdentityRole<long>>()
                 .AddEntityFrameworkStores<BlazorCmsContext>()
                 .AddDefaultTokenProviders();
+
+            services.AddAuthentication();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -83,6 +86,9 @@ namespace BlazorCMS.Server
 
             app.UseRouting();
 
+            app.UseAuthentication();
+            app.UseAuthorization();
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapDefaultControllerRoute();
@@ -94,10 +100,17 @@ namespace BlazorCMS.Server
                 using (var dbContext = serviceScope.ServiceProvider.GetService<BlazorCmsContext>())
                 {
                     dbContext.Database.Migrate();
+
+                    using (var roleManager = serviceScope.ServiceProvider.GetService<RoleManager<IdentityRole<long>>>())
+                    {
+                        dbContext.SeedRole(roleManager);
+                    }
+
                     using (var userManager = serviceScope.ServiceProvider.GetService<UserManager<User>>())
                     {
                         dbContext.SeedUser(userManager);
                     }
+
                     dbContext.SeedHelloWorldSectionAndArticle();
                 }
             }

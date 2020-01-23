@@ -1,0 +1,12 @@
+.login-page-container {
+    text-align: center;
+    margin-top: 15%;
+}
+
+.login-page-container  .form-group  .input-group {
+    margin-bottom: 20px;
+}
+
+.login-errors-container {
+    color: red;
+}
