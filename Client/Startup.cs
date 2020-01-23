@@ -1,5 +1,6 @@
 using System.Reflection;
 using BlazorCMS.Client.State;
+using Blazored.Toast;
 using BlazorState;
 using MediatR;
 using Microsoft.AspNetCore.Components.Builder;
@@ -19,6 +20,7 @@ namespace BlazorCMS.Client
                 });
             services.AddTransient<ClientState>();
             services.AddBlazorContextMenu();
+            services.AddBlazoredToast();
         }
 
         public void Configure(IComponentsApplicationBuilder app)

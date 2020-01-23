@@ -23,6 +23,11 @@ namespace BlazorCMS.Client.Services
             return await _client.PostJsonAsync<ResultDto<bool>>("/api/users/login", form);
         }
 
+        public async Task<ResultDto<bool>> Logout()
+        {
+            return await _client.PostJsonAsync<ResultDto<bool>>("/api/users/logout", null);
+        }
+
         public async Task<ResultDto<UserDto>> GetCurrentUser()
         {
             return await _client.GetJsonAsync<ResultDto<UserDto>>("/api/users/current");

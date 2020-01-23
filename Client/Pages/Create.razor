@@ -1,6 +1,5 @@
 @page "/Section/{SectionId:long}/Create"
 @using System.Collections.Immutable
-@using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
@@ -22,6 +21,9 @@
     private NavigationManager NavigationManager { get; set; }
     private ArticleService    _articleService;
 
+    [Inject]
+    private IToastService ToastService { get; set; }
+
     private bool IsLoading { get; set; }
 
     private async Task OnSave(ArticleDto article)
@@ -38,6 +40,10 @@
             state.Articles = state.Articles.Add(result.ResultObject);
             Store.SetState(state);
             NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{Article.Id}");
+        }
+        else
+        {
+            ToastService.ShowError("Failed to create article.");
         }
 
         IsLoading = false;
@@ -58,8 +64,14 @@
         state.SidebarLoadingArticles = true;
         Store.SetState(state);
         var result     = await _articleService.Index(SectionId);
+
+        if (result.HasErrorsOrResultIsNull())
+        {
+            ToastService.ShowError("Failed to retrieve articles.");
+        }
+
         state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
-        state.Articles = state.Articles.AddRange(result.ResultObject);
+        state.Articles = state.Articles.AddRange(result.ResultObject?.ToList() ?? new List<ArticleDto>());
         state.SidebarLoadingArticles = false;
         Store.SetState(state);
         state.UpdateNavMenu();
@@ -68,6 +80,7 @@
     protected override void OnInitialized()
     {
         _articleService = new ArticleService(NavigationManager);
+        this.GoToLoginIfUnauthorized(NavigationManager);
     }
 
     protected override async Task OnParametersSetAsync()

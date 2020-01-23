@@ -1,97 +1,99 @@
 ﻿@using System.Collections.Immutable
-@using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
 @inherits UpdatableComponent
 
 <div class="top-row pl-4 navbar navbar-dark">
-    <a class="navbar-brand" href="">BlazorCMS</a>
-    <button class="navbar-toggler" @onclick="ToggleNavMenu">
+    <a class="navbar-brand" href="/home">BlazorCMS</a>
+    <button class="navbar-toggler" @onclick="@ToggleNavMenu">
         <span class="navbar-toggler-icon"></span>
     </button>
 </div>
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
-    <ul class="nav flex-column">
-        <li class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
-            </NavLink>
-        </li>
-        @if (_isLoadingAll)
-        {
-            <Loading Light="@true"/>
-        }
-        else
-        {
+<div class="@NavMenuCssClass" @onclick="@ToggleNavMenu">
+    @if (CurrentUser != null)
+    {
+        <ul class="nav flex-column">
             <li class="nav-item px-3">
-                <button type="button" class="btn btn-success w-100" @onclick="@OnSectionCreate">
-                    Create Section&nbsp;<i class="oi oi-plus"></i>
-                </button>
+                <NavLink class="nav-link" href="/home" Match="NavLinkMatch.All">
+                    <span class="oi oi-home" aria-hidden="true"></span> Home
+                </NavLink>
             </li>
-            @foreach (var section in Sections)
+            @if (_isLoadingAll)
+            {
+                <Loading Light="@true"/>
+            }
+            else
             {
                 <li class="nav-item px-3">
-                    @if (_editingSectionId == section.Id)
-                    {
-                        <SidebarEditSection
-                            SectionId="@section.Id"
-                            InitialTitle="@section.Name"
-                            OnSave="@OnSectionEditConfirm"/>
-                    }
-                    else
-                    {
-                        <span @onclick="@(() => LoadArticlesForSections(section.Id))">
-                            <ContextMenuTrigger MenuId="@(SidebarContextMenu.GetMenuId(section.Id))">
-                                <NavLink class="nav-link">
-                                    <span class="oi oi-book" aria-hidden="true"></span> @section.Name
-                                </NavLink>
-                            </ContextMenuTrigger>
-                            <SidebarContextMenu Section="@section" OnEdit="@OnSectionEdit" OnDelete="@OnSectionDelete"/>
-                        </span>
-                    }
-                    @if (ExpandedSectionId == section.Id)
-                    {
-                        @if (IsLoadingArticles)
+                    <button type="button" class="btn btn-success w-100" @onclick="@OnSectionCreate">
+                        Create Section&nbsp;<i class="oi oi-plus"></i>
+                    </button>
+                </li>
+                @foreach (var section in Sections)
+                {
+                    <li class="nav-item px-3">
+                        @if (_editingSectionId == section.Id)
                         {
-                            <Loading Light="@true"/>
+                            <SidebarEditSection
+                                SectionId="@section.Id"
+                                InitialTitle="@section.Name"
+                                OnSave="@OnSectionEditConfirm"/>
                         }
                         else
                         {
-                            <ul class="nav flex-column sub-menu">
-                                @foreach (var article in ExpandedSectionArticles)
-                                {
-                                    <li class="nav-item px-3">
-                                        <ContextMenuTrigger MenuId="@SidebarContextMenu.GetMenuId(article.Id, SidebarContextMenu.SidebarContextMenuType.ARTICLE)">
-                                            <NavLink class="nav-link" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
-                                                <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
-                                            </NavLink>
-                                        </ContextMenuTrigger>
-                                        <SidebarContextMenu Article="@article" OnDelete="@OnArticleDelete" Type="@SidebarContextMenu.SidebarContextMenuType.ARTICLE" ShowEdit="@false"/>
-                                    </li>
-                                }
-                                <li class="nav-item px-3">
-                                    <button type="button" class="btn btn-success w-100" @onclick="@(() => Create(section.Id))">
-                                        Create Article&nbsp;<i class="oi oi-plus"></i>
-                                    </button>
-                                </li>
-                            </ul>
+                            <span @onclick="@(() => LoadArticlesForSections(section.Id))">
+                                <ContextMenuTrigger MenuId="@(SidebarContextMenu.GetMenuId(section.Id))">
+                                    <NavLink class="nav-link">
+                                        <span class="oi oi-book" aria-hidden="true"></span> @section.Name
+                                    </NavLink>
+                                </ContextMenuTrigger>
+                                <SidebarContextMenu Section="@section" OnEdit="@OnSectionEdit" OnDelete="@OnSectionDelete"/>
+                            </span>
                         }
-                    }
-                </li>
+                        @if (ExpandedSectionId == section.Id)
+                        {
+                            @if (IsLoadingArticles)
+                            {
+                                <Loading Light="@true"/>
+                            }
+                            else
+                            {
+                                <ul class="nav flex-column sub-menu">
+                                    @foreach (var article in ExpandedSectionArticles)
+                                    {
+                                        <li class="nav-item px-3">
+                                            <ContextMenuTrigger MenuId="@SidebarContextMenu.GetMenuId(article.Id, SidebarContextMenu.SidebarContextMenuType.ARTICLE)">
+                                                <NavLink class="nav-link" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
+                                                    <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
+                                                </NavLink>
+                                            </ContextMenuTrigger>
+                                            <SidebarContextMenu Article="@article" OnDelete="@OnArticleDelete" Type="@SidebarContextMenu.SidebarContextMenuType.ARTICLE" ShowEdit="@false"/>
+                                        </li>
+                                    }
+                                    <li class="nav-item px-3">
+                                        <button type="button" class="btn btn-success w-100" @onclick="@(() => Create(section.Id))">
+                                            Create Article&nbsp;<i class="oi oi-plus"></i>
+                                        </button>
+                                    </li>
+                                </ul>
+                            }
+                        }
+                    </li>
+                }
+                @if (_showSectionCreate)
+                {
+                    <li class="nav-item px-3">
+                        <SidebarEditSection
+                            SectionId="@(-1)"
+                            InitialTitle=""
+                            OnSave="@OnSectionCreateConfirm"/>
+                    </li>
+                }
             }
-            @if (_showSectionCreate)
-            {
-                <li class="nav-item px-3">
-                    <SidebarEditSection
-                        SectionId="@(-1)"
-                        InitialTitle=""
-                        OnSave="@OnSectionCreateConfirm"/>
-                </li>
-            }
-        }
-    </ul>
+        </ul>
+    }
 </div>
 
 @code {
@@ -108,6 +110,8 @@
     private bool _isLoadingAll      = false;
     private long _editingSectionId  = -1;
     private bool _showSectionCreate = false;
+
+    private UserDto CurrentUser => Store.GetState<ClientState>()?.CurrentUser;
 
     private long ExpandedSectionId
     {
@@ -286,11 +290,20 @@
         Store.GetState<ClientState>().RegisterNavMenuComponent(this);
     }
 
+    public override async Task UpdateAndReloadData()
+    {
+        await LoadSections();
+        this.StateHasChanged();
+    }
+
     protected override async Task OnInitializedAsync()
     {
         _sectionService = new SectionService(NavigationManager);
         _articleService = new ArticleService(NavigationManager);
-        await LoadSections();
+        if (CurrentUser != null)
+        {
+            await LoadSections();
+        }
     }
 
 }

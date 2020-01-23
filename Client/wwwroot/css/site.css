@@ -4,6 +4,7 @@
 @import url('Components/Editor.css');
 @import url('Components/Index.css');
 @import url('Components/Login.css');
+@import url('Components/Toast.css');
 
 .w-100 {
     width: 100%;

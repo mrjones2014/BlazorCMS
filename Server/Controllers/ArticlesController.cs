@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using AndcultureCode.CSharp.Core.Enumerations;
 using AndcultureCode.CSharp.Core.Extensions;
+using AndcultureCode.CSharp.Core.Interfaces;
 using AndcultureCode.CSharp.Core.Interfaces.Conductors;
+using AndcultureCode.CSharp.Core.Models;
 using AutoMapper;
 using BlazorCMS.Server.Data.Models;
 using BlazorCMS.Shared.Dtos;
@@ -24,6 +27,7 @@ namespace BlazorCMS.Server.Controllers
         private readonly IRepositoryDeleteConductor<Article> _deleteConductor;
         private readonly IRepositoryReadConductor<Article>   _readConductor;
         private readonly IRepositoryUpdateConductor<Article> _updateConductor;
+        private readonly IRepositoryReadConductor<Section>   _sectionReadConductor;
         private readonly IMapper                             _mapper;
 
         #endregion Properties
@@ -35,15 +39,17 @@ namespace BlazorCMS.Server.Controllers
             IRepositoryDeleteConductor<Article> deleteConductor,
             IRepositoryReadConductor<Article>   readConductor,
             IRepositoryUpdateConductor<Article> updateConductor,
+            IRepositoryReadConductor<Section>   sectionReadConductor,
             IMapper                             mapper,
             UserManager<User>                   userManager
         ) : base(userManager)
         {
-            _createConductor = createConductor;
-            _deleteConductor = deleteConductor;
-            _readConductor   = readConductor;
-            _updateConductor = updateConductor;
-            _mapper          = mapper;
+            _createConductor      = createConductor;
+            _deleteConductor      = deleteConductor;
+            _readConductor        = readConductor;
+            _updateConductor      = updateConductor;
+            _sectionReadConductor = sectionReadConductor;
+            _mapper               = mapper;
         }
 
         #endregion Constructor
@@ -53,6 +59,28 @@ namespace BlazorCMS.Server.Controllers
         [HttpPut]
         public IActionResult Put([FromBody] ArticleDto article)
         {
+            var sectionGetResult = _sectionReadConductor.FindById(article.SectionId);
+            if (sectionGetResult.HasErrorsOrResultIsNull())
+            {
+                return Ok<ArticleDto>(null, sectionGetResult.Errors);
+            }
+
+            if (sectionGetResult.ResultObject.UserId != CurrentUser.Id)
+            {
+                return Ok<ArticleDto>(
+                    null,
+                    new List<IError>
+                    {
+                        new Error
+                        {
+                            ErrorType = ErrorType.ValidationError,
+                            Key       = "Forbidden",
+                            Message   = "Cannot create an article in another user's section."
+                        }
+                    }
+                );
+            }
+
             var newArticle = new Article
             {
                 Title     = article.Title,
@@ -79,10 +107,33 @@ namespace BlazorCMS.Server.Controllers
             var getResult = _readConductor.FindById(article.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
-                return NotFound(false, getResult.Errors);
+                return Ok(false, getResult.Errors);
             }
 
             var updatedArticle   = getResult.ResultObject;
+
+            var sectionGetResult = _sectionReadConductor.FindById(updatedArticle.SectionId);
+            if (sectionGetResult.HasErrorsOrResultIsNull())
+            {
+                return Ok<ArticleDto>(null, sectionGetResult.Errors);
+            }
+
+            if (sectionGetResult.ResultObject.UserId != CurrentUser.Id)
+            {
+                return Ok<ArticleDto>(
+                    null,
+                    new List<IError>
+                    {
+                        new Error
+                        {
+                            ErrorType = ErrorType.ValidationError,
+                            Key       = "Forbidden",
+                            Message   = "Cannot update an article in another user's section."
+                        }
+                    }
+                );
+            }
+
             updatedArticle.Title = article.Title;
             updatedArticle.Body  = article.Body;
 
@@ -102,7 +153,7 @@ namespace BlazorCMS.Server.Controllers
         [HttpGet]
         public IActionResult Index([FromRoute] long sectionId)
         {
-            Expression<Func<Article, bool>> filter = e => e.SectionId == sectionId;
+            Expression<Func<Article, bool>> filter = e => e.SectionId == sectionId && e.Section.UserId == CurrentUser.Id;
             var findResult                         = _readConductor.FindAll(filter);
 
             if (findResult.HasErrorsOrResultIsNull())
@@ -119,7 +170,29 @@ namespace BlazorCMS.Server.Controllers
             var findResult = _readConductor.FindById(id);
             if (findResult.HasErrorsOrResultIsNull())
             {
-                return NotFound<ArticleDto>(null, findResult.Errors);
+                return Ok<ArticleDto>(null, findResult.Errors);
+            }
+
+            var sectionGetResult = _sectionReadConductor.FindById(findResult.ResultObject.SectionId);
+            if (sectionGetResult.HasErrorsOrResultIsNull())
+            {
+                return Ok<ArticleDto>(null, sectionGetResult.Errors);
+            }
+
+            if (sectionGetResult.ResultObject.UserId != CurrentUser.Id)
+            {
+                return Ok<ArticleDto>(
+                    null,
+                    new List<IError>
+                    {
+                        new Error
+                        {
+                            ErrorType = ErrorType.ValidationError,
+                            Key       = "Forbidden",
+                            Message   = "Cannot get an article in another user's section."
+                        }
+                    }
+                );
             }
 
             return Ok(_mapper.Map<ArticleDto>(findResult.ResultObject), null);
@@ -132,6 +205,34 @@ namespace BlazorCMS.Server.Controllers
         [HttpDelete("{id:long}")]
         public IActionResult Delete([FromRoute] long sectionId, [FromRoute] long id)
         {
+            var findResult = _readConductor.FindById(id);
+            if (findResult.HasErrorsOrResultIsNull())
+            {
+                return Ok<ArticleDto>(null, findResult.Errors);
+            }
+
+            var sectionGetResult = _sectionReadConductor.FindById(findResult.ResultObject.SectionId);
+            if (sectionGetResult.HasErrorsOrResultIsNull())
+            {
+                return Ok<ArticleDto>(null, sectionGetResult.Errors);
+            }
+
+            if (sectionGetResult.ResultObject.UserId != CurrentUser.Id)
+            {
+                return Ok<ArticleDto>(
+                    null,
+                    new List<IError>
+                    {
+                        new Error
+                        {
+                            ErrorType = ErrorType.ValidationError,
+                            Key       = "Forbidden",
+                            Message   = "Cannot get an article in another user's section."
+                        }
+                    }
+                );
+            }
+
             var deleteResult = _deleteConductor.Delete(id: id, soft: false);
             if (deleteResult.HasErrorsOrResultIsNull())
             {

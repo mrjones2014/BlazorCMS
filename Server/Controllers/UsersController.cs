@@ -137,5 +137,23 @@ namespace BlazorCMS.Server.Controllers
         }
 
         #endregion CurrentUser
+
+        #region Logout
+
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            if (CurrentUser == null)
+            {
+                return Ok(true, null);
+            }
+
+            await _signInManager.SignOutAsync();
+            return Ok(true, null);
+        }
+
+        #endregion Logout
     }
 }

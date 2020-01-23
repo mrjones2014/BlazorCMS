@@ -1,7 +1,21 @@
 ﻿@page "/home"
+@using BlazorCMS.Client.State
+@inherits BlazorState.BlazorStateComponent
 
 <div class="home-icon-container">
     <h1>Welcome to BlazorCMS!</h1>
     <span class="oi oi-book"></span>
     <span class="oi oi-fire"></span>
 </div>
+
+@code {
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    protected override void OnInitialized()
+    {
+        this.GoToLoginIfUnauthorized(NavigationManager);
+    }
+
+}

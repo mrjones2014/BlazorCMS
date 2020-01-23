@@ -14,6 +14,7 @@ using BlazorCMS.Server.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using BlazorCMS.Shared.Dtos;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 
 namespace BlazorCMS.Server
@@ -66,6 +67,19 @@ namespace BlazorCMS.Server
             services.AddIdentity<User, IdentityRole<long>>()
                 .AddEntityFrameworkStores<BlazorCmsContext>()
                 .AddDefaultTokenProviders();
+
+            services.ConfigureApplicationCookie(
+                options =>
+                {
+                    options.Cookie.Name = "blazorcms_auth_cookie";
+                    options.LoginPath   = new PathString("/");
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        return Task.CompletedTask;
+                    };
+                }
+            );
 
             services.AddAuthentication();
         }

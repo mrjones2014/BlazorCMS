@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading.Tasks;
 using BlazorCMS.Client.Shared;
 using BlazorCMS.Shared.Dtos;
 using BlazorState;
@@ -41,6 +42,7 @@ namespace BlazorCMS.Client.State
             Articles               = ImmutableList<ArticleDto>.Empty;
             ExpandedSectionId      = -1;
             SidebarLoadingArticles = false;
+            CurrentUser            = null;
         }
 
         public void RegisterNavMenuComponent(NavMenu menu)
@@ -51,6 +53,11 @@ namespace BlazorCMS.Client.State
         public void UpdateNavMenu()
         {
             _sidebarReference.Update();
+        }
+
+        public async Task UpdateNavMenuAndReloadData()
+        {
+            await _sidebarReference.UpdateAndReloadData();
         }
 
         #endregion Public Methods

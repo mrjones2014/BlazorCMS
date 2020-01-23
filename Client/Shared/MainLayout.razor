@@ -1,4 +1,6 @@
-﻿@inherits LayoutComponentBase
+﻿@using BlazorCMS.Client.Services
+@using Blazored.Toast.Configuration
+@inherits LayoutComponentBase
 
 <div class="sidebar">
     <NavMenu />
@@ -6,10 +8,43 @@
 
 <div class="main">
     <div class="top-row px-4">
-        <a href="https://github.com/andCulture/BlazorCMS" target="_blank" class="ml-md-auto">GitHub Repo</a>
+        <a href="https://github.com/andCulture/BlazorCMS" target="_blank">GitHub Repo</a>
+        <button type="button" class="btn btn-primary ml-md-auto" @onclick="@Logout">Logout</button>
     </div>
 
     <div class="content px-4">
         @Body
     </div>
 </div>
+
+<BlazoredToasts Position="@ToastPosition.BottomRight"/>
+
+@code {
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; }
+
+    [Inject]
+    private IToastService ToastService { get; set; }
+
+    private UserService _userService;
+
+    private async Task Logout()
+    {
+        var result = await _userService.Logout();
+        if (result.HasErrorsOrResultIsNull())
+        {
+            ToastService.ShowError("Failed to log out.");
+            return;
+        }
+
+        NavigationManager.NavigateTo("/");
+    }
+
+    protected override void OnInitialized()
+    {
+        _userService = new UserService(NavigationManager);
+        base.OnInitialized();
+    }
+
+}

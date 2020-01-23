@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using BlazorState;
 
 namespace BlazorCMS.Client.State
@@ -8,5 +9,7 @@ namespace BlazorCMS.Client.State
         {
             this.StateHasChanged();
         }
+
+        public abstract Task UpdateAndReloadData();
     }
 }

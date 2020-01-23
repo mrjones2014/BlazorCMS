@@ -1,6 +1,5 @@
 @page "/Section/{SectionId:long}/Article/{ArticleId:long}/Edit"
 @using System.Collections.Immutable
-@using AndcultureCode.CSharp.Core.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
@@ -23,6 +22,9 @@
     private NavigationManager NavigationManager { get; set; }
     private ArticleService    _articleService;
 
+    [Inject]
+    private IToastService ToastService { get; set; }
+
     private bool IsLoading { get; set; }
 
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
@@ -42,6 +44,10 @@
             Store.SetState(state);
             NavigationManager.NavigateTo($"/Section/{SectionId}/Article/{ArticleId}");
         }
+        else
+        {
+            ToastService.ShowError("Failed to save article.");
+        }
 
         IsLoading = false;
         this.StateHasChanged();
@@ -56,6 +62,7 @@
     protected override void OnInitialized()
     {
         _articleService = new ArticleService(NavigationManager);
+        this.GoToLoginIfUnauthorized(NavigationManager);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -65,15 +72,21 @@
             return;
         }
 
-            // populate all the articles for the section so the nav bar updates properly
-            var state                    = Store.GetState<ClientState>();
-            state.ExpandedSectionId      = SectionId;
-            state.SidebarLoadingArticles = true;
-            var result                   = await _articleService.Index(SectionId);
-            state.Articles               = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
-            state.Articles               = state.Articles.AddRange(result.ResultObject);
-            state.SidebarLoadingArticles = false;
-            Store.SetState(state);
+        // populate all the articles for the section so the nav bar updates properly
+        var state                    = Store.GetState<ClientState>();
+        state.ExpandedSectionId      = SectionId;
+        state.SidebarLoadingArticles = true;
+        var result                   = await _articleService.Index(SectionId);
+
+        if (result.HasErrorsOrResultIsNull())
+        {
+            ToastService.ShowError("Failed to retrieve articles.");
+        }
+
+        state.Articles               = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+        state.Articles               = state.Articles.AddRange(result.ResultObject?.ToList() ?? new List<ArticleDto>());
+        state.SidebarLoadingArticles = false;
+        Store.SetState(state);
     }
 
 }

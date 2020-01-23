@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
+using AndcultureCode.CSharp.Core.Enumerations;
 using AndcultureCode.CSharp.Core.Extensions;
+using AndcultureCode.CSharp.Core.Interfaces;
 using AndcultureCode.CSharp.Core.Interfaces.Conductors;
+using AndcultureCode.CSharp.Core.Models;
 using AutoMapper;
 using BlazorCMS.Server.Data.Models;
 using BlazorCMS.Shared.Dtos;
@@ -53,7 +56,8 @@ namespace BlazorCMS.Server.Controllers
         {
             var newSection = new Section
             {
-                Name = section.Name
+                Name   = section.Name,
+                UserId = CurrentUser.Id
             };
             var createResult = _createConductor.Create(newSection);
             if (createResult.HasErrors)
@@ -73,12 +77,30 @@ namespace BlazorCMS.Server.Controllers
         {
             section.Id = sectionId;
             var getResult = _readConductor.FindById(section.Id);
+
             if (getResult.HasErrorsOrResultIsNull())
             {
                 return Ok(false, getResult.Errors);
             }
 
             var updatedSection  = getResult.ResultObject;
+
+            if (updatedSection.UserId != CurrentUser.Id)
+            {
+                return Ok(
+                    false,
+                    new List<IError>
+                    {
+                        new Error
+                        {
+                            ErrorType = ErrorType.ValidationError,
+                            Key       = "Forbidden",
+                            Message   = "Cannot update another user's section."
+                        }
+                    }
+                );
+            }
+
             updatedSection.Name = section.Name;
 
             var updateResult = _updateConductor.Update(updatedSection);
@@ -97,7 +119,7 @@ namespace BlazorCMS.Server.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var getResult = _readConductor.FindAll();
+            var getResult = _readConductor.FindAll(e => e.UserId == CurrentUser.Id);
             if (getResult.HasErrorsOrResultIsNull())
             {
                 return Ok<IEnumerable<SectionDto>>(null, getResult.Errors);
@@ -131,6 +153,20 @@ namespace BlazorCMS.Server.Controllers
         [HttpDelete("{id:long}")]
         public IActionResult Delete(long id)
         {
+            var getResult = _readConductor.FindById(id);
+            if (!getResult.HasErrorsOrResultIsNull() && getResult.ResultObject.UserId != CurrentUser.Id)
+            {
+                return Ok(false, new List<IError>
+                {
+                    new Error
+                    {
+                        ErrorType = ErrorType.ValidationError,
+                        Key       = "Forbidden",
+                        Message   = "Cannot delete another user's section."
+                    }
+                });
+            }
+
             var deleteResult = _deleteConductor.Delete(id: id, soft: false);
             if (deleteResult.HasErrors)
             {

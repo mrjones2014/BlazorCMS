@@ -29,6 +29,9 @@
     private NavigationManager NavigationManager { get; set; }
     private ArticleService    _articleService;
 
+    [Inject]
+    private IToastService ToastService { get; set; }
+
     private ArticleDto Article => Store.GetState<ClientState>()?.Articles?.FirstOrDefault(e => e.Id == ArticleId);
 
     private void Edit()
@@ -39,6 +42,7 @@
     protected override void OnInitialized()
     {
         _articleService = new ArticleService(NavigationManager);
+        this.GoToLoginIfUnauthorized(NavigationManager);
     }
 
     protected override async Task OnParametersSetAsync()
@@ -54,8 +58,14 @@
         state.SidebarLoadingArticles = true;
         Store.SetState(state);
         var result     = await _articleService.Index(SectionId);
+
+        if (result.HasErrorsOrResultIsNull())
+        {
+            ToastService.ShowError("Failed to retrieve articles.");
+        }
+
         state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
-        state.Articles = state.Articles.AddRange(result.ResultObject);
+        state.Articles = state.Articles.AddRange(result.ResultObject?.ToList() ?? new List<ArticleDto>());
         state.SidebarLoadingArticles = false;
         Store.SetState(state);
         state.UpdateNavMenu();
