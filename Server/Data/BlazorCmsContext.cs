@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using BlazorCMS.Server.Data.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace BlazorCMS.Server.Data
 {
-    public class BlazorCmsContext : DbContext
+    public class BlazorCmsContext : IdentityDbContext<User, IdentityRole<long>, long>
     {
         #region Constructor
 

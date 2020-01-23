@@ -12,6 +12,7 @@ using BlazorCMS.Server.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
 using BlazorCMS.Shared.Dtos;
+using Microsoft.AspNetCore.Identity;
 
 namespace BlazorCMS.Server
 {
@@ -50,6 +51,10 @@ namespace BlazorCMS.Server
             });
             IMapper mapper = autoMapperConfig.CreateMapper();
             services.AddSingleton<IMapper>(mapper);
+
+            services.AddIdentity<User, IdentityRole<long>>()
+                .AddEntityFrameworkStores<BlazorCmsContext>()
+                .AddDefaultTokenProviders();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
