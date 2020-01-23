@@ -32,7 +32,9 @@
 
     private UserService _userService;
 
-    private bool IsLoginScreen => NavigationManager.Uri == NavigationManager.BaseUri;
+    private bool IsLoginScreen => NavigationManager.Uri == NavigationManager.BaseUri ||
+                                    NavigationManager.Uri == $"{NavigationManager.BaseUri}#" ||
+                                    NavigationManager.Uri == $"{NavigationManager.BaseUri}/#";
 
     private async Task Logout()
     {
