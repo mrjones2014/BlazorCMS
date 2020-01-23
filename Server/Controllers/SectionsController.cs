@@ -5,6 +5,7 @@ using AndcultureCode.CSharp.Core.Interfaces.Conductors;
 using AutoMapper;
 using BlazorCMS.Server.Data.Models;
 using BlazorCMS.Shared.Dtos;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlazorCMS.Server.Controllers
@@ -30,8 +31,9 @@ namespace BlazorCMS.Server.Controllers
             IRepositoryDeleteConductor<Section> deleteConductor,
             IRepositoryReadConductor<Section>   readConductor,
             IRepositoryUpdateConductor<Section> updateConductor,
-            IMapper                             mapper
-        )
+            IMapper                             mapper,
+            UserManager<User>                   userManager
+        ) : base(userManager)
         {
             _createConductor = createConductor;
             _deleteConductor = deleteConductor;

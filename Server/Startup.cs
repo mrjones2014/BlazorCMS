@@ -57,6 +57,7 @@ namespace BlazorCMS.Server
             {
                 config.CreateMap<Section, SectionDto>();
                 config.CreateMap<Article, ArticleDto>();
+                config.CreateMap<User,    UserDto>();
             });
             IMapper mapper = autoMapperConfig.CreateMapper();
             services.AddSingleton<IMapper>(mapper);

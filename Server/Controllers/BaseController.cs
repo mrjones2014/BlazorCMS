@@ -1,13 +1,52 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AndcultureCode.CSharp.Core.Interfaces;
 using AndcultureCode.CSharp.Core.Models;
+using BlazorCMS.Server.Data.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BlazorCMS.Server.Controllers
 {
     public class BaseController : Controller
     {
+        #region Properties
+
+        protected readonly UserManager<User> _userManager;
+
+        private User _currentUser;
+        protected User CurrentUser
+        {
+            get
+            {
+                if (_currentUser != null)
+                {
+                    return _currentUser;
+                }
+                try
+                {
+                    _currentUser = _userManager.GetUserAsync(HttpContext.User).Result;
+                    return _currentUser;
+                }
+                catch (Exception ex)
+                {
+                    return _currentUser;
+                }
+            }
+        }
+
+        #endregion Properties
+
+        #region Constructor
+
+        public BaseController(UserManager<User> userManager)
+        {
+            _userManager = userManager;
+        }
+
+        #endregion Constructor
+
         #region Public Utility Methods
 
         /// <summary>
