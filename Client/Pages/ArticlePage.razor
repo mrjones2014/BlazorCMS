@@ -47,13 +47,16 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        var state               = Store.GetState<ClientState>();
+        state.SelectedArticleId = ArticleId;
+        Store.SetState(state);
+        state.UpdateNavMenu();
         if (Article != null)
         {
             return;
         }
 
         // populate all the articles for the section so the nav bar updates properly
-        var state                    = Store.GetState<ClientState>();
         state.ExpandedSectionId      = SectionId;
         state.SidebarLoadingArticles = true;
         Store.SetState(state);
@@ -64,8 +67,8 @@
             ToastService.ShowError("Failed to retrieve articles.");
         }
 
-        state.Articles = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
-        state.Articles = state.Articles.AddRange(result.ResultObject?.ToList() ?? new List<ArticleDto>());
+        state.Articles               = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
+        state.Articles               = state.Articles.AddRange(result.ResultObject?.ToList() ?? new List<ArticleDto>());
         state.SidebarLoadingArticles = false;
         Store.SetState(state);
         state.UpdateNavMenu();

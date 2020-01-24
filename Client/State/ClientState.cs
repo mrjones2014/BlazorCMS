@@ -27,10 +27,10 @@ namespace BlazorCMS.Client.State
             set => _sections = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        public long             ExpandedSectionId      { get; set; }
-        public bool             SidebarLoadingArticles { get; set; }
-
-        public UserDto          CurrentUser { get; set; }
+        public long    ExpandedSectionId      { get; set; }
+        public long    SelectedArticleId      { get; set; }
+        public bool    SidebarLoadingArticles { get; set; }
+        public UserDto CurrentUser            { get; set; }
 
         #endregion Properties
 
@@ -41,6 +41,7 @@ namespace BlazorCMS.Client.State
             Sections               = ImmutableList<SectionDto>.Empty;
             Articles               = ImmutableList<ArticleDto>.Empty;
             ExpandedSectionId      = -1;
+            SelectedArticleId      = -1;
             SidebarLoadingArticles = false;
             CurrentUser            = null;
         }

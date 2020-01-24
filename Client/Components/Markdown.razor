@@ -1,4 +1,4 @@
-@using Markdig;
+@using Markdig
 @using Markdig.SyntaxHighlighting
 
 <div class="markdown-container">
@@ -10,12 +10,17 @@
     [Parameter]
     public string Content { get; set; }
 
-    private MarkupString GetRenderedMarkdownString() => (MarkupString)Markdig.Markdown.ToHtml(
+    private static MarkdownPipeline MarkdownPipeline = new MarkdownPipelineBuilder()
+        .UseAdvancedExtensions()
+        .UseSyntaxHighlighting()
+        .UseBootstrap()
+        .UseEmojiAndSmiley()
+        .UseSmartyPants()
+        .Build();
+
+    private MarkupString GetRenderedMarkdownString() => (MarkupString) Markdig.Markdown.ToHtml(
         markdown: Content,
-        pipeline: new MarkdownPipelineBuilder()
-                    .UseAdvancedExtensions()
-                    .UseSyntaxHighlighting()
-                    .Build()
+        pipeline: MarkdownPipeline
     );
 
 }

@@ -41,7 +41,8 @@
                             <span @onclick="@(() => LoadArticlesForSections(section.Id))">
                                 <ContextMenuTrigger MenuId="@(SidebarContextMenu.GetMenuId(section.Id))">
                                     <NavLink class="nav-link">
-                                        <span class="oi oi-book" aria-hidden="true"></span> @section.Name
+                                        <span class="oi oi-book" aria-hidden="true"></span>
+                                        <span>@section.Name</span>
                                     </NavLink>
                                 </ContextMenuTrigger>
                                 <SidebarContextMenu Section="@section" OnEdit="@OnSectionEdit" OnDelete="@OnSectionDelete"/>
@@ -61,7 +62,8 @@
                                         <li class="nav-item px-3">
                                             <ContextMenuTrigger MenuId="@SidebarContextMenu.GetMenuId(article.Id, SidebarContextMenu.SidebarContextMenuType.ARTICLE)">
                                                 <NavLink class="nav-link" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
-                                                    <span class="oi oi-justify-left" aria-hidden="true"></span> @article.Title
+                                                    <span class="oi oi-justify-left" aria-hidden="true"></span>
+                                                    <span>@article.Title</span>
                                                 </NavLink>
                                             </ContextMenuTrigger>
                                             <SidebarContextMenu Article="@article" OnDelete="@OnArticleDelete" Type="@SidebarContextMenu.SidebarContextMenuType.ARTICLE" ShowEdit="@false"/>

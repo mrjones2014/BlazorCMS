@@ -67,13 +67,16 @@
 
     protected override async Task OnParametersSetAsync()
     {
+        var state               = Store.GetState<ClientState>();
+        state.SelectedArticleId = ArticleId;
+        Store.SetState(state);
+        state.UpdateNavMenu();
         if (Article != null)
         {
             return;
         }
 
         // populate all the articles for the section so the nav bar updates properly
-        var state                    = Store.GetState<ClientState>();
         state.ExpandedSectionId      = SectionId;
         state.SidebarLoadingArticles = true;
         var result                   = await _articleService.Index(SectionId);
