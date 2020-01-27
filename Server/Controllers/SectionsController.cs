@@ -6,6 +6,7 @@ using AndcultureCode.CSharp.Core.Interfaces;
 using AndcultureCode.CSharp.Core.Interfaces.Conductors;
 using AndcultureCode.CSharp.Core.Models;
 using AutoMapper;
+using BlazorCMS.Server.Conductors;
 using BlazorCMS.Server.Data.Models;
 using BlazorCMS.Shared.Dtos;
 using Microsoft.AspNetCore.Authorization;
@@ -21,6 +22,7 @@ namespace BlazorCMS.Server.Controllers
     {
         #region Properties
 
+        private readonly IAuthorizationConductor<Section>    _authorizationConductor;
         private readonly IRepositoryCreateConductor<Section> _createConductor;
         private readonly IRepositoryDeleteConductor<Section> _deleteConductor;
         private readonly IRepositoryReadConductor<Section>   _readConductor;
@@ -32,6 +34,7 @@ namespace BlazorCMS.Server.Controllers
         #region Constructor
 
         public SectionsController(
+            IAuthorizationConductor<Section>    authorizationConductor,
             IRepositoryCreateConductor<Section> createConductor,
             IRepositoryDeleteConductor<Section> deleteConductor,
             IRepositoryReadConductor<Section>   readConductor,
@@ -40,11 +43,12 @@ namespace BlazorCMS.Server.Controllers
             UserManager<User>                   userManager
         ) : base(userManager)
         {
-            _createConductor = createConductor;
-            _deleteConductor = deleteConductor;
-            _readConductor   = readConductor;
-            _updateConductor = updateConductor;
-            _mapper          = mapper;
+            _authorizationConductor = authorizationConductor;
+            _createConductor        = createConductor;
+            _deleteConductor        = deleteConductor;
+            _readConductor          = readConductor;
+            _updateConductor        = updateConductor;
+            _mapper                 = mapper;
         }
 
         #endregion Constructor
@@ -76,6 +80,12 @@ namespace BlazorCMS.Server.Controllers
         public IActionResult Post([FromRoute] long sectionId, [FromBody] SectionDto section)
         {
             section.Id = sectionId;
+            var authResult = _authorizationConductor.IsAuthorized(sectionId, CurrentUser.Id);
+            if (authResult.HasErrorsOrResultIsFalse())
+            {
+                return Ok<SectionDto>(null, authResult.Errors);
+            }
+
             var getResult = _readConductor.FindById(section.Id);
 
             if (getResult.HasErrorsOrResultIsNull())
@@ -84,23 +94,6 @@ namespace BlazorCMS.Server.Controllers
             }
 
             var updatedSection  = getResult.ResultObject;
-
-            if (updatedSection.UserId != CurrentUser.Id)
-            {
-                return Ok(
-                    false,
-                    new List<IError>
-                    {
-                        new Error
-                        {
-                            ErrorType = ErrorType.ValidationError,
-                            Key       = "Forbidden",
-                            Message   = "Cannot update another user's section."
-                        }
-                    }
-                );
-            }
-
             updatedSection.Name = section.Name;
 
             var updateResult = _updateConductor.Update(updatedSection);
@@ -119,7 +112,7 @@ namespace BlazorCMS.Server.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var getResult = _readConductor.FindAll(e => e.UserId == CurrentUser.Id);
+            var getResult = _readConductor.FindAll(_authorizationConductor.FilterByUserId(CurrentUser.Id));
             if (getResult.HasErrorsOrResultIsNull())
             {
                 return Ok<IEnumerable<SectionDto>>(null, getResult.Errors);
@@ -131,6 +124,12 @@ namespace BlazorCMS.Server.Controllers
         [HttpGet("{id:long}")]
         public IActionResult Get(long id)
         {
+            var authResult = _authorizationConductor.IsAuthorized(id, CurrentUser.Id);
+            if (authResult.HasErrorsOrResultIsFalse())
+            {
+                return Ok<SectionDto>(null, authResult.Errors);
+            }
+
             var getResult = _readConductor.FindById(id);
             if (getResult.HasErrorsOrResultIsNull())
             {
@@ -153,18 +152,10 @@ namespace BlazorCMS.Server.Controllers
         [HttpDelete("{id:long}")]
         public IActionResult Delete(long id)
         {
-            var getResult = _readConductor.FindById(id);
-            if (!getResult.HasErrorsOrResultIsNull() && getResult.ResultObject.UserId != CurrentUser.Id)
+            var authResult = _authorizationConductor.IsAuthorized(id, CurrentUser.Id);
+            if (authResult.HasErrorsOrResultIsFalse())
             {
-                return Ok(false, new List<IError>
-                {
-                    new Error
-                    {
-                        ErrorType = ErrorType.ValidationError,
-                        Key       = "Forbidden",
-                        Message   = "Cannot delete another user's section."
-                    }
-                });
+                return Ok<SectionDto>(null, authResult.Errors);
             }
 
             var deleteResult = _deleteConductor.Delete(id: id, soft: false);

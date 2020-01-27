@@ -13,6 +13,7 @@ using BlazorCMS.Server.Data;
 using BlazorCMS.Server.Data.Models;
 using Microsoft.EntityFrameworkCore;
 using AutoMapper;
+using BlazorCMS.Server.Conductors;
 using BlazorCMS.Shared.Dtos;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -54,6 +55,9 @@ namespace BlazorCMS.Server
             services.AddScoped<IRepositoryReadConductor<Article>,   RepositoryReadConductor<Article>>();
             services.AddScoped<IRepositoryUpdateConductor<Article>, RepositoryUpdateConductor<Article>>();
             services.AddScoped<IRepositoryDeleteConductor<Article>, RepositoryDeleteConductor<Article>>();
+
+            services.AddScoped<IAuthorizationConductor<Section>, SectionAuthorizationConductor>();
+            services.AddScoped<IAuthorizationConductor<Article>, ArticleAuthorizationConductor>();
 
             var autoMapperConfig = new MapperConfiguration(config =>
             {
