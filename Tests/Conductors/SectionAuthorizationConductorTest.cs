@@ -15,7 +15,7 @@ namespace BlazorCMS.Tests.Conductors
         private Mock<IRepositoryReadConductor<Section>> _readConductor = new Mock<IRepositoryReadConductor<Section>>();
 
         [Fact]
-        public void When_UserId_Equals_SectionUserId_Then_Returns_False()
+        public void When_UserId_Equals_SectionUserId_Then_Returns_True()
         {
             // Arrange
             var sectionId  = 1;
@@ -77,7 +77,7 @@ namespace BlazorCMS.Tests.Conductors
             result.First().Id.ShouldBe(1);
         }
 
-        public override IAuthorizationConductor<Section> Sut()
+        protected override IAuthorizationConductor<Section> Sut()
         {
             return new SectionAuthorizationConductor(_readConductor.Object);
         }

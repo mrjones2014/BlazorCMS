@@ -6,7 +6,7 @@ namespace BlazorCMS.Tests.Conductors
 {
     public abstract class IAuthorizationConductorTest<T> : IDisposable
     {
-        public abstract IAuthorizationConductor<T> Sut();
+        protected abstract IAuthorizationConductor<T> Sut();
 
         private long? _currentUserId = null;
 
