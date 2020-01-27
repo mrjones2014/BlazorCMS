@@ -153,6 +153,8 @@
         if (Store.GetState<ClientState>().SelectedArticleId == articleId)
         {
             className += " active";
+
+            LoadArticlesForSections(Store.GetState<ClientState>().ExpandedSectionId);
         }
 
         return className;
@@ -292,6 +294,7 @@
         state.Articles = state.Articles.AddRange(result.ResultObject);
         Store.SetState(state);
         IsLoadingArticles = false;
+        this.StateHasChanged();
     }
 
     private async Task LoadSections()

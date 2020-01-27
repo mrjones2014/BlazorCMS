@@ -13,3 +13,7 @@
 .content.px-4 {
     height: calc(100% - 3.75rem);
 }
+
+.editor-footer {
+    margin-top: 15px;
+}

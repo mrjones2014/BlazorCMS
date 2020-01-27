@@ -1,3 +1,5 @@
+@using BlazorCMS.Client.Components.Monaco
+@using BlazorCMS.Client.Components.Monaco.Options
 @using BlazorCMS.Shared.Dtos
 @using BlazorStrap
 
@@ -7,10 +9,11 @@
         <BSTab>
             <BSTabLabel>Edit</BSTabLabel>
             <BSTabContent>
-                <textarea
-                    class="editor-textarea form-control"
-                    @bind-value="@Content.Body"
-                    @bind-value:event="oninput"></textarea>
+                <MonacoEditor Model="@EditorModel" Fullscreen="@true" Height="calc(100% - 175px)" OnContentChange="@OnContentChanged"/>
+                @* <textarea *@
+                @*     class="editor-textarea form-control" *@
+                @*     @bind-value="@Content.Body" *@
+                @*     @bind-value:event="oninput"></textarea> *@
                 <div class="editor-footer">
                     <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="@OnSaveCallback">
                         @if (IsLoading)
@@ -57,6 +60,21 @@
 
     private void OnSaveCallback() => OnSave(Content);
     private void OnCancelCallback() => OnCancel();
+
+    private EditorOptions EditorOptions => new EditorOptions()
+    {
+        AutoIndent = true,
+        Language   = "markdown",
+        Value      = Content.Body,
+    };
+
+    private EditorModel EditorModel => new EditorModel(EditorOptions);
+
+    public void OnContentChanged(string newValue)
+    {
+        Console.WriteLine($"NewValue: {newValue}");
+        Content.Body = newValue;
+    }
 
     protected override Task OnParametersSetAsync()
     {
