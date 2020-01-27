@@ -31,15 +31,11 @@
 
     protected override void OnInitialized()
     {
-        var didRedirect = this.GoToLoginIfUnauthorized(NavigationManager);
-        if (!didRedirect)
+        var state = Store.GetState<ClientState>();
+        if (state.Articles?.Any() ?? false)
         {
-            var state = Store.GetState<ClientState>();
-            if (state.Articles?.Any() ?? false)
-            {
-                var firstArticle = state.Articles.First();
-                NavigationManager.NavigateTo($"/Section/{firstArticle.SectionId}/Article/{firstArticle.Id}");
-            }
+            var firstArticle = state.Articles.First();
+            NavigationManager.NavigateTo($"/Section/{firstArticle.SectionId}/Article/{firstArticle.Id}");
         }
 
         _initialized = true;

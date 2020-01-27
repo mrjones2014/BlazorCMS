@@ -80,7 +80,6 @@
     protected override void OnInitialized()
     {
         _articleService = new ArticleService(NavigationManager);
-        this.GoToLoginIfUnauthorized(NavigationManager);
     }
 
     protected override async Task OnParametersSetAsync()

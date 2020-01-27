@@ -61,7 +61,7 @@
                                     {
                                         <li class="nav-item px-3">
                                             <ContextMenuTrigger MenuId="@SidebarContextMenu.GetMenuId(article.Id, SidebarContextMenu.SidebarContextMenuType.ARTICLE)">
-                                                <NavLink class="nav-link" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
+                                                <NavLink class="@GetNavItemClass(article.Id)" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
                                                     <span class="oi oi-justify-left" aria-hidden="true"></span>
                                                     <span>@article.Title</span>
                                                 </NavLink>
@@ -108,7 +108,17 @@
     private long _editingSectionId  = -1;
     private bool _showSectionCreate = false;
 
-    private UserDto CurrentUser => Store.GetState<ClientState>()?.CurrentUser;
+    public UserDto CurrentUser
+    {
+        get => Store.GetState<ClientState>()?.CurrentUser;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.CurrentUser = value;
+            Store.SetState(state);
+            LoadSections();
+        }
+    }
 
     private long ExpandedSectionId
     {
@@ -135,6 +145,17 @@
             state.SidebarLoadingArticles = value;
             Store.SetState(state);
         }
+    }
+
+    private string GetNavItemClass(long articleId)
+    {
+        var className = "nav-link";
+        if (Store.GetState<ClientState>().SelectedArticleId == articleId)
+        {
+            className += " active";
+        }
+
+        return className;
     }
 
     private void OnSectionEdit(long sectionId)
@@ -178,7 +199,6 @@
     {
         _isLoadingAll = true;
         var shouldRedirect = await JsRuntime.InvokeAsync<bool>("BlazorCmsJsFunctions.hasClass", $"#nav-link-article-{articleId}", "active");
-        Console.WriteLine(shouldRedirect);
         var state          = Store.GetState<ClientState>();
         var article        = state.Articles.First(e => e.Id == articleId);
         var result         = await _articleService.Delete(article.SectionId, articleId);
@@ -280,6 +300,7 @@
         var state = Store.GetState<ClientState>();
         state.Sections = result.ResultObject?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
         Store.SetState(state);
+        this.StateHasChanged();
     }
 
     protected override void OnInitialized()

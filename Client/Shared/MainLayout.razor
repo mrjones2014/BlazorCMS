@@ -3,7 +3,7 @@
 @inherits LayoutComponentBase
 
 <div class="sidebar">
-    <NavMenu />
+    <NavMenu @ref="@_navMenu"/>
 </div>
 
 <div class="main">
@@ -16,7 +16,14 @@
     </div>
 
     <div class="content px-4">
-        @Body
+        @if (_initialized)
+        {
+            @Body
+        }
+        else
+        {
+            <Loading/>
+        }
     </div>
 </div>
 
@@ -31,6 +38,10 @@
     private IToastService ToastService { get; set; }
 
     private UserService _userService;
+
+    private bool _initialized = false;
+
+    private NavMenu _navMenu;
 
     private bool IsLoginScreen => NavigationManager.Uri == NavigationManager.BaseUri ||
                                     NavigationManager.Uri == $"{NavigationManager.BaseUri}#" ||
@@ -48,10 +59,21 @@
         NavigationManager.NavigateTo("/");
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         _userService = new UserService(NavigationManager);
-        base.OnInitialized();
+        var currentUserResult = await _userService.GetCurrentUser();
+        if (currentUserResult.HasErrorsOrResultIsNull())
+        {
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            _navMenu.CurrentUser = currentUserResult.ResultObject;
+        }
+
+        _initialized = true;
+        this.StateHasChanged();
     }
 
 }
