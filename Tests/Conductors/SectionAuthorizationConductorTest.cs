@@ -73,7 +73,7 @@ namespace BlazorCMS.Tests.Conductors
             var result = sections.Where(sut.FilterByUserId(CurrentUserId).Compile()).ToList();
 
             // Assert
-            result.Count().ShouldBe(1);
+            result.Count.ShouldBe(1);
             result.First().Id.ShouldBe(1);
         }
 

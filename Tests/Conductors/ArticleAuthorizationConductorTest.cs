@@ -97,7 +97,7 @@ namespace BlazorCMS.Tests.Conductors
             var results = articles.Where(sut.FilterByUserId(CurrentUserId).Compile()).ToList();
 
             // Assert
-            results.Count().ShouldBe(1);
+            results.Count.ShouldBe(1);
             results.First().Id.ShouldBe(1);
         }
 
