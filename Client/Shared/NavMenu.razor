@@ -153,8 +153,6 @@
         if (Store.GetState<ClientState>().SelectedArticleId == articleId)
         {
             className += " active";
-
-            LoadArticlesForSections(Store.GetState<ClientState>().ExpandedSectionId);
         }
 
         return className;
@@ -265,7 +263,7 @@
     private async Task LoadArticlesForSections(long sectionId)
     {
         // if clicked from the already expanded section, collapse it
-        if (sectionId == ExpandedSectionId)
+        if (sectionId == ExpandedSectionId && ExpandedSectionArticles != null && ExpandedSectionArticles.Any())
         {
             ExpandedSectionId  = -1;
             IsLoadingArticles = false;
@@ -291,6 +289,7 @@
 
         // update shared state
         var state = Store.GetState<ClientState>();
+        state.Articles = state.Articles.Where(e => result.ResultObject.All(a => a.Id != e.Id)).ToImmutableList();
         state.Articles = state.Articles.AddRange(result.ResultObject);
         Store.SetState(state);
         IsLoadingArticles = false;
@@ -303,6 +302,10 @@
         var state = Store.GetState<ClientState>();
         state.Sections = result.ResultObject?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
         Store.SetState(state);
+        if (ExpandedSectionId > 0)
+        {
+            await LoadArticlesForSections(ExpandedSectionId);
+        }
         this.StateHasChanged();
     }
 

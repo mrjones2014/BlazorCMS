@@ -49,7 +49,7 @@
         var state               = Store.GetState<ClientState>();
         state.SelectedArticleId = ArticleId;
         Store.SetState(state);
-        state.UpdateNavMenu();
+        await state.UpdateNavMenuAndReloadData();
         if (Article != null)
         {
             return;

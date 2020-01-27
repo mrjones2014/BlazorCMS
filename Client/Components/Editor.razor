@@ -63,9 +63,14 @@
 
     private EditorOptions EditorOptions => new EditorOptions()
     {
-        AutoIndent = true,
-        Language   = "markdown",
-        Value      = Content.Body,
+        AutoIndent           = true,
+        Language             = "markdown",
+        Value                = Content.Body,
+        ScrollBeyondLastLine = false,
+        Minimap              = new MinimapOptions()
+        {
+            ShowSlider = "always"
+        }
     };
 
     private EditorModel EditorModel => new EditorModel(EditorOptions);

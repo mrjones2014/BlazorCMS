@@ -68,8 +68,10 @@
     {
         var state               = Store.GetState<ClientState>();
         state.SelectedArticleId = ArticleId;
+        state.ExpandedSectionId = SectionId;
         Store.SetState(state);
-        state.UpdateNavMenu();
+        await state.UpdateNavMenuAndReloadData();
+
         if (Article != null)
         {
             return;
