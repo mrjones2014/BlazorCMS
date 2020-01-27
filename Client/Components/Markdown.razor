@@ -1,18 +1,33 @@
 @using Markdig
-@using Markdig.SyntaxHighlighting
 
-<div class="markdown-container">
+<div class="markdown-container" id="@Id">
     @GetRenderedMarkdownString()
 </div>
 
 @code {
 
+    [Inject]
+    IJSRuntime JsRuntime { get; set; }
+
     [Parameter]
     public string Content { get; set; }
 
+    private string _id;
+
+    private string Id
+    {
+        get
+        {
+            if (_id == null)
+            {
+                _id = $"md-{System.Guid.NewGuid().ToString()}";
+            }
+            return _id;
+        }
+    }
+
     private static MarkdownPipeline MarkdownPipeline = new MarkdownPipelineBuilder()
         .UseAdvancedExtensions()
-        .UseSyntaxHighlighting()
         .UseBootstrap()
         .UseEmojiAndSmiley()
         .UseSmartyPants()
@@ -22,5 +37,11 @@
         markdown: Content,
         pipeline: MarkdownPipeline
     );
+
+    protected override async void OnAfterRender(bool firstRender)
+    {
+        await JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.applySyntaxHighlighting", $"#{Id}");
+        base.OnAfterRender(firstRender);
+    }
 
 }

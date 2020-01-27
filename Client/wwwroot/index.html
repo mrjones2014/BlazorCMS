@@ -2,14 +2,22 @@
 <html>
 
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/clipboard@2/dist/clipboard.min.js"></script>
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>BlazorCMS</title>
     <base href="/" />
     <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
     <link href="css/site.css" rel="stylesheet" />
-    <link href="blazorContextMenu.css" rel="stylesheet" />
-    <script src="blazorContextMenu.js"></script>
+
+    <!--  BlazorContextMenu  -->
+    <link href="BlazorContextMenu/blazorContextMenu.css" rel="stylesheet" />
+    <script src="BlazorContextMenu/blazorContextMenu.js"></script>
+
+    <!--  Prism syntax highlighting  -->
+    <link href="Prism/prism.css" rel="stylesheet"/>
+
     <script src="BlazorCmsFunctions.js"></script>
 </head>
 
@@ -22,6 +30,9 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
+
+    <!--  Prism syntax highlighting  -->
+    <script src="Prism/prism.js"></script>
 </body>
 
 </html>
