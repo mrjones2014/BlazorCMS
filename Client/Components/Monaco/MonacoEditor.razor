@@ -22,8 +22,6 @@
     [Parameter]
     public Action<string> OnContentChange { get; set; }
 
-    private bool _alreadyRendered = false;
-
     private string GetStyleString()
     {
         if (FullScreen)
@@ -50,9 +48,9 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!_alreadyRendered || firstRender)
+        if (firstRender)
         {
-            _alreadyRendered = await MonacoJsInterop.InitializeEditor(JsRuntime, Model);
+            await MonacoJsInterop.InitializeEditor(JsRuntime, Model);
             if (OnContentChange != null)
             {
                 await MonacoJsInterop.OnContentChange(JsRuntime, DotNetObjectReference.Create(this), Model.Id, nameof(Monaco__OnContentChangeCallback));
