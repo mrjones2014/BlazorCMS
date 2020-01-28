@@ -66,5 +66,8 @@ window.BlazorCms.Monaco = {
         myEditor.editor.getModel().onDidChangeContent(function () {
             componentInstance.invokeMethodAsync(csharpMethodName);
         });
+        myEditor.editor.onDidBlurEditorWidget(function () {
+            componentInstance.invokeMethodAsync(csharpMethodName);
+        });
     }
 };
