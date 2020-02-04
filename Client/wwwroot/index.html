@@ -16,19 +16,10 @@
     <link href="BlazorContextMenu/blazorContextMenu.css" rel="stylesheet" />
     <script src="BlazorContextMenu/blazorContextMenu.js"></script>
 
-    <!--  Prism syntax highlighting  -->
-    <link href="Prism/prism.css" rel="stylesheet"/>
-
-    <!--  Monaco editor  -->
-    <script>var require = { paths: { 'vs': 'monaco-editor/min/vs' } };</script>
-    <script src="monaco-editor/min/vs/loader.js"></script>
-    <script src="monaco-editor/min/vs/editor/editor.main.nls.js"></script>
-    <script src="monaco-editor/min/vs/editor/editor.main.js"></script>
     <script type="blazor-boot">
     </script>
 
-    <script src="BlazorCmsFunctions.js"></script>
-    <script src="monaco-editor/MonacoEditorBlazorInterop.js"></script>
+    <script src="app.js"></script>
 </head>
 
 <body>
@@ -40,9 +31,6 @@
         <a class="dismiss">🗙</a>
     </div>
     <script src="_framework/blazor.webassembly.js"></script>
-
-    <!--  Prism syntax highlighting  -->
-    <script src="Prism/prism.js"></script>
 </body>
 
 </html>

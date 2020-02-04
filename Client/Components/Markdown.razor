@@ -40,7 +40,7 @@
 
     protected override async void OnAfterRender(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.applySyntaxHighlighting", $"#{Id}");
+        await JsRuntime.InvokeVoidAsync("BlazorCmsFunctions.applySyntaxHighlighting", $"#{Id}");
         base.OnAfterRender(firstRender);
     }
 

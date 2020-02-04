@@ -39,7 +39,7 @@
         if (firstRender)
         {
             // use JS interop API to call a JS function to focus the input element on first render
-            JsRuntime.InvokeVoidAsync("BlazorCmsJsFunctions.focus", "#section-edit-input");
+            JsRuntime.InvokeVoidAsync("BlazorCmsFunctions.focus", "#section-edit-input");
         }
         base.OnAfterRender(firstRender);
     }

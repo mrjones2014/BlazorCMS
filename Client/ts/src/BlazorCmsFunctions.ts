@@ -1,4 +1,5 @@
-import Prism from 'prismjs';
+import Prism            from 'prismjs';
+import { IBlazorModule } from './IBlazorModule';
 
 interface IBlazorCmsFunctions {
     focus: (selector: string) => void;
@@ -36,6 +37,6 @@ const functions: IBlazorCmsFunctions = {
     }
 };
 
-export const BlazorCmsFunctions = {
-    init: () => (<any>window).BlazorCmsFunctions = functions
+export const BlazorCmsFunctions: IBlazorModule = {
+    register: () => (<any>window).BlazorCmsFunctions = functions
 };
