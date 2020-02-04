@@ -2,7 +2,9 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 const path = require('path');
 
 module.exports = {
-    entry: './src/Index.ts',
+    entry: {
+        App: './src/Index.ts',
+    },
     output: {
         path: path.resolve(__dirname, '../wwwroot'),
         filename: 'app.js'
