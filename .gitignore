@@ -3,6 +3,9 @@ BlazorCMS.db
 BlazorCMS.db-shm
 BlazorCMS.db-wal
 
+# compiled TS
+Client/wwwroot/dist/
+
 # .env file
 .env
 

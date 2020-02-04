@@ -6,8 +6,8 @@ module.exports = {
         App: './src/Index.ts',
     },
     output: {
-        path: path.resolve(__dirname, '../wwwroot'),
-        filename: 'app.js'
+        path: path.resolve(__dirname, '../wwwroot/dist'),
+        filename: '[name].js'
     },
     module: {
         rules: [{
