@@ -1,3 +1,4 @@
+@namespace BlazorCMS.Client.Components
 @using Markdig
 
 <div class="markdown-container" id="@Id">
@@ -40,7 +41,7 @@
 
     protected override async void OnAfterRender(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("BlazorCmsFunctions.applySyntaxHighlighting", $"#{Id}");
+        await JsRuntime.InvokeVoidAsync("BlazorCms.Utils.applySyntaxHighlighting", $"#{Id}");
         base.OnAfterRender(firstRender);
     }
 

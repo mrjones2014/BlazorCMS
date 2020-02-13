@@ -1,3 +1,4 @@
+@namespace BlazorCMS.Client.Components
 @using BlazorCMS.Client.Components.Monaco
 @using BlazorCMS.Client.Components.Monaco.Options
 @using BlazorCMS.Shared.Dtos
@@ -61,20 +62,6 @@
     private void OnSaveCallback() => OnSave(Content);
     private void OnCancelCallback() => OnCancel();
 
-    private EditorOptions EditorOptions => new EditorOptions()
-    {
-        AutoIndent           = true,
-        Language             = "markdown",
-        Value                = Content.Body,
-        ScrollBeyondLastLine = false,
-        Minimap              = new MinimapOptions()
-        {
-            ShowSlider = "always"
-        }
-    };
-
-    private EditorModel EditorModel => new EditorModel(EditorOptions);
-
     public void OnContentChanged(string newValue)
     {
         Content.Body = newValue;
@@ -86,15 +73,6 @@
         Content.Body  = Content.Body?.Trim() ?? "";
         Content.Title = Content.Title?.Trim() ?? "";
         return base.OnParametersSetAsync();
-    }
-
-    protected override Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            JsRuntime.InvokeVoidAsync("BlazorCmsFunctions.focus", ".form-control.editor-title-input");
-        }
-        return base.OnAfterRenderAsync(firstRender);
     }
 
 }

@@ -38,5 +38,8 @@ const functions: IBlazorCmsFunctions = {
 };
 
 export const BlazorCmsFunctions: IBlazorModule = {
-    register: () => (<any>window).BlazorCmsFunctions = functions
+    register: () => {
+        (<any>window).BlazorCms       = (<any>window).BlazorCms || {};
+        (<any>window).BlazorCms.Utils = functions;
+    }
 };

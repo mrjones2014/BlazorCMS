@@ -198,7 +198,7 @@
     private async Task OnArticleDelete(long articleId)
     {
         _isLoadingAll = true;
-        var shouldRedirect = await JsRuntime.InvokeAsync<bool>("BlazorCmsFunctions.hasClass", $"#nav-link-article-{articleId}", "active");
+        var shouldRedirect = await JsRuntime.InvokeAsync<bool>("BlazorCms.Utils.hasClass", $"#nav-link-article-{articleId}", "active");
         var state          = Store.GetState<ClientState>();
         var article        = state.Articles.First(e => e.Id == articleId);
         var result         = await _articleService.Delete(article.SectionId, articleId);
