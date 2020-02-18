@@ -1,0 +1,17 @@
+.sub-menu {
+  border-left: 1px solid white;
+}
+
+.sidebar {
+  .nav-item {
+    max-width: 100%;
+
+    .nav-link {
+      width: 185px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+    }
+  }
+}

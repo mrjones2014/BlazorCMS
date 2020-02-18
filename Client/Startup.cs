@@ -1,4 +1,5 @@
 using System.Reflection;
+using BlazorCMS.Client.Components.CodeMirror;
 using BlazorCMS.Client.State;
 using Blazored.Toast;
 using BlazorState;
@@ -21,6 +22,8 @@ namespace BlazorCMS.Client
             services.AddTransient<ClientState>();
             services.AddBlazorContextMenu();
             services.AddBlazoredToast();
+            services.AddScoped<ICodeMirrorInterop, CodeMirrorInterop>();
+            services.AddScoped<IBlazorCmsJsUtils,  BlazorCmsJsUtils>();
         }
 
         public void Configure(IComponentsApplicationBuilder app)

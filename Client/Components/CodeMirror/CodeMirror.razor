@@ -1,0 +1,46 @@
+@namespace BlazorCMS.Client.Components.CodeMirror
+
+<div id="@EditorId" class="codemirror-container"></div>
+
+@code {
+
+    [Inject]
+    private ICodeMirrorInterop CodeMirrorInterop { get; set; }
+
+    [Parameter]
+    public string InitialContent { get; set; }
+
+    [Parameter]
+    public Action<string>? OnContentChanged { get; set; }
+
+    private string _id;
+
+    public string EditorId
+    {
+        get
+        {
+            if (_id == null)
+            {
+                _id = $"codemirror-editor-{Guid.NewGuid().ToString()}";
+            }
+            return _id;
+        }
+    }
+
+    [JSInvokable]
+    public void OnContentChangeCallback(string content)
+    {
+        OnContentChanged?.Invoke(content);
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            CodeMirrorInterop.InitializeEditor(EditorId, InitialContent ?? "", !string.IsNullOrWhiteSpace(InitialContent));
+            CodeMirrorInterop.OnChange(EditorId, DotNetObjectReference.Create(this), nameof(OnContentChangeCallback));
+        }
+        base.OnAfterRender(firstRender);
+    }
+
+}

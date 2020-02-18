@@ -4,7 +4,6 @@ BlazorCMS.db-shm
 BlazorCMS.db-wal
 
 # compiled TS
-Client/wwwroot/dist/
 **/.cache
 **/.cache/*
 

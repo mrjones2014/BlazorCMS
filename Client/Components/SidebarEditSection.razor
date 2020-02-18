@@ -12,7 +12,7 @@
 @code {
 
     [Inject]
-    private IJSRuntime JsRuntime { get; set; }
+    private IBlazorCmsJsUtils JsUtils { get; set; }
 
     [Parameter]
     public long SectionId { get; set; }
@@ -41,7 +41,7 @@
         if (firstRender)
         {
             // use JS interop API to call a JS function to focus the input element on first render
-            JsRuntime.InvokeVoidAsync("BlazorCms.Utils.focus", "#section-edit-input");
+            JsUtils.Focus("#section-edit-input");
         }
         base.OnAfterRender(firstRender);
     }

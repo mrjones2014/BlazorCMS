@@ -1,10 +1,4 @@
 ﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
-@import url('Components/Loading.css');
-@import url('Components/NavMenu.css');
-@import url('Components/Editor.css');
-@import url('Components/Index.css');
-@import url('Components/Login.css');
-@import url('Components/Toast.css');
 
 .w-100 {
     width: 100%;

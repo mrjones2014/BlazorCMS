@@ -8,7 +8,7 @@
 @code {
 
     [Inject]
-    IJSRuntime JsRuntime { get; set; }
+    private IBlazorCmsJsUtils JsUtils { get; set; }
 
     [Parameter]
     public string Content { get; set; }
@@ -41,7 +41,7 @@
 
     protected override async void OnAfterRender(bool firstRender)
     {
-        await JsRuntime.InvokeVoidAsync("BlazorCms.Utils.applySyntaxHighlighting", $"#{Id}");
+        JsUtils.ApplySyntaxHighlighting($"#{Id}");
         base.OnAfterRender(firstRender);
     }
 

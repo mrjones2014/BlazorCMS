@@ -1,49 +1,50 @@
 @namespace BlazorCMS.Client.Components
-@using BlazorCMS.Client.Components.Monaco
-@using BlazorCMS.Client.Components.Monaco.Options
 @using BlazorCMS.Shared.Dtos
+@using BlazorCMS.Client.Components.CodeMirror
 @using BlazorStrap
 
-<input type="text" @bind-value="@Content.Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
-<BSTabGroup class="editor-tabgroup">
-    <BSTabList>
-        <BSTab>
-            <BSTabLabel>Edit</BSTabLabel>
-            <BSTabContent>
-                <MonacoEditor Model="@EditorModel" Fullscreen="@true" Height="calc(100% - 175px)" OnContentChange="@OnContentChanged"/>
-                @* <textarea *@
-                @*     class="editor-textarea form-control" *@
-                @*     @bind-value="@Content.Body" *@
-                @*     @bind-value:event="oninput"></textarea> *@
-                <div class="editor-footer">
-                    <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="@OnSaveCallback">
-                        @if (IsLoading)
-                        {
-                            <Loading/>
-                        }
-                        else
-                        {
-                            <span>Save</span>
-                        }
-                    </button>
-                    <button type="button" class="btn btn-secondary" disabled="@IsLoading" @onclick="@OnCancelCallback">Cancel</button>
-                </div>
-            </BSTabContent>
-        </BSTab>
-        <BSTab>
-            <BSTabLabel>Preview</BSTabLabel>
-            <BSTabContent>
-                <Markdown Content="@Content.Body"/>
-            </BSTabContent>
-        </BSTab>
-    </BSTabList>
-    <BSTabSelectedContent/>
-</BSTabGroup>
+<div class="c-editor">
+    <input type="text" @bind-value="@Content.Title" @bind-value:event="oninput" class="form-control editor-title-input"/>
+    <BSTabGroup class="editor-tabgroup">
+        <BSTabList>
+            <BSTab>
+                <BSTabLabel>Edit</BSTabLabel>
+                <BSTabContent>
+                    <CodeMirror InitialContent="@(InitialContent?.Body)" OnContentChanged="@OnContentChanged"/>
+                    @* <textarea *@
+                    @*     class="editor-textarea form-control" *@
+                    @*     @bind-value="@Content.Body" *@
+                    @*     @bind-value:event="oninput"></textarea> *@
+                    <div class="editor-footer">
+                        <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="@OnSaveCallback">
+                            @if (IsLoading)
+                            {
+                                <Loading/>
+                            }
+                            else
+                            {
+                                <span>Save</span>
+                            }
+                        </button>
+                        <button type="button" class="btn btn-secondary" disabled="@IsLoading" @onclick="@OnCancelCallback">Cancel</button>
+                    </div>
+                </BSTabContent>
+            </BSTab>
+            <BSTab>
+                <BSTabLabel>Preview</BSTabLabel>
+                <BSTabContent>
+                    <Markdown Content="@Content.Body"/>
+                </BSTabContent>
+            </BSTab>
+        </BSTabList>
+        <BSTabSelectedContent/>
+    </BSTabGroup>
+</div>
 
 @code {
 
     [Inject]
-    IJSRuntime JsRuntime { get; set; }
+    private IBlazorCmsJsUtils JsUtils { get; set; }
 
     [Parameter]
     public ArticleDto InitialContent { get; set; }
@@ -73,6 +74,15 @@
         Content.Body  = Content.Body?.Trim() ?? "";
         Content.Title = Content.Title?.Trim() ?? "";
         return base.OnParametersSetAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && string.IsNullOrWhiteSpace(InitialContent?.Body))
+        {
+            JsUtils.Focus(".editor-title-input");
+        }
+        base.OnAfterRender(firstRender);
     }
 
 }

@@ -1,19 +1,23 @@
-.editor-textarea {
+.c-editor {
+  .editor-textarea {
     resize: none;
     width: 100%;
     height: calc(100% - 11rem)!important;
     margin-top: 15px;
     margin-bottom: 15px;
-}
+  }
 
-.editor-title-input {
+  .editor-title-input {
     margin-bottom: 10px;
-}
+  }
 
-.content.px-4 {
-    height: calc(100% - 3.75rem);
-}
+  .content {
+    .px-4 {
+      height: calc(100% - 3.75rem);
+    }
+  }
 
-.editor-footer {
+  .editor-footer {
     margin-top: 15px;
+  }
 }
