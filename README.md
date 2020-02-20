@@ -1639,31 +1639,54 @@ which are not outlined here, but you can find the full code [here](https://githu
 
 So, what impact on download size and page load speed does shipping a WASM-compiled .NET runtime to the browser have?
 Let's find out.
+
+Using Chrome developer tools, I analyzed the network traffic created by visiting the website. I ran 5 page loads
+ignoring cache (using Chrome's "Empty Cache and Hard Reload") and 5 normal page loads (with caches).
  
- Using Chrome developer tools, I analyzed the network traffic created by visiting the website. I ran 5 page loads
- ignoring cache (using Chrome's "Empty Cache and Hard Reload") and 5 normal page loads (with caches).
+|               | Data Transferred | Resources |
+| ------------- | ---------------- | --------- |
+| Without Cache | 7.5 MB           | 17.7 MB   |
+| With Cache    | 34.5 KB          | 17.7 MB   |
+
+These results show that, at least with an application this small scale, the browser is able to cache about 99%
+of the data it needs ([including the framework assemblies themselves](https://github.com/dotnet/aspnetcore/issues/18448))
+to download in order to run the application. Based on these numbers, the WASM .NET runtime most likely clocks
+in somewhere around 7.25 MB when published for production.
+
+Most users won't care about these numbers, though. Let's take a look at the numbers they will care about;
+the time it takes to load the page.
+"Load Time" is the time to get a response from the server.
+
+"`DOMContentLoaded` Time" is the time for all HTML markup to be served, and the `DOMContentLoaded` Javascript event to be triggered.
+
+"Finish Time" is the time for the page to be fully loaded and become interactive.
+
+
+|               | Average Load Time (seconds) | Average `DOMContentLoaded` Time (seconds) | Average Finish Time (seconds) |
+| ------------- | --------------------------- | ----------------------------------------- | ----------------------------- |
+| Without Cache | 0.672                       | 0.6614                                    | 2.258                         |
+| With Cache    | 0.391                       | 0.3798                                    | 1.682                         |
  
- |               | Data Transferred | Resources |
- | ------------- | ---------------- | --------- |
- | Without Cache | 7.5 MB           | 17.7 MB   |
- | With Cache    | 34.5 KB          | 17.7 MB   |
+<img alt="Average Loading Times Graph" src="https://raw.githubusercontent.com/andCulture/BlazorCMS/development/Average_Loading_Times.png"/>
  
- These results show that, at least with an application this small scale, the browser is able to cache about 99%
- of the data it needs to download in order to run the application. Based on these numbers, the WASM .NET runtime
- most likely clocks in somewhere around 7.25 MB when published for production.
- 
- Most users won't care about these numbers, though. Let's take a look at the numbers they will care about;
- the time it takes to load the page.
- 
- "Load Time" is the time to get a response from the server.
- 
- "`DOMContentLoaded` Time" is the time for all HTML markup to be served, and the `DOMContentLoaded` Javascript event to be triggered.
- 
- "Finish Time" is the time for the page to be fully loaded and become interactive.
- 
- 
- |               | Average Load Time (seconds) | Average `DOMContentLoaded` Time (seconds) | Average Finish Time (seconds) |
- | ------------- | --------------------------- | ----------------------------------------- | ----------------------------- |
- | Without Cache | 0.672                       | 0.6614                                    | 2.258                         |
- | With Cache    | 0.391                       | 0.3798                                    | 1.682                         |
- 
+All things considered, that doesn't seem too bad! Blazor is still in preview, and the developers are
+[actively working on reducing the framework size](https://github.com/dotnet/aspnetcore/issues/16956). When Blazor is
+production-ready, it will likely be significantly more network-performant than it already is.
+
+# Remarks
+As an engineer, the Blazor framework *feels* amazing to work with. Blazor gives you the ability to share code between the server
+and the client, without the baggage of having to use Javascript on the server (think [Node JS](https://nodejs.org/)) to achieve
+this. And, since you're running a **real, full .NET runtime in the browser,** you can use almost any C#/.NET libraries you may
+already be familiar with (since it's running in a browser, on top of the Javascript engine, certain OS APIs may not be usable,
+and most browsers run Javascript in a sandboxed environment for security reasons).
+
+However, Blazor is still in preview, and, as expected, there are some issues. The main issue I ran into was with reactivity when
+using application state shared between components. I had to implement a custom component class with a manually applied listener
+as a workaround in order to get the sidebar state to update when navigating directly to an article via its URL.
+
+Another issue is the fact that some of the DOM API is not usable without implementing Javascript and using Javascript interop.
+For example, I had to write some Javascript in order to focus an input on page (really, component) load. On top of that, the
+API for Javascript interop feels somewhat clunky to work with. I ended up creating a set of Javascript classes, and then creating
+C# classes which took an instance of the `JSRuntime` class in their constructors to build a C# binding directly to the Javascript
+functions, but this is a lot of manual work. These C# bindings could *easily* fall out of sync with the corresponding Javascript
+in a larger scale project.
