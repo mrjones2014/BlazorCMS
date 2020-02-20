@@ -4,7 +4,7 @@
 There are two different variations of Blazor; Blazor-Server, in which C# processing is performed on the server and the results
 are sent to the client via a websocket connection, or Blazor-Wasm, which actually ships a full WebAssembly .NET runtime to the browser. 
 
-Let's build a (very) simple CMS using Blazor-Wasm, with a .NET Core hosted backend.
+Let's build a (very) simple CMS using Blazor-Wasm, with a .NET Core hosted backend. Or, you can skip to the [analytics](#analytics);
 
 All of the code related to this article can be found [here](https://github.com/andCulture/BlazorCMS).
 
@@ -1631,3 +1631,39 @@ The create screen uses the same markup, but with slightly different initializati
 
 }
 ```
+
+There you have basic create/read/update/delete functionality for Markdown content. There are a number of enhancements
+which are not outlined here, but you can find the full code [here](https://github.com/andCulture/BlazorCMS).
+
+# Analytics
+
+So, what impact on download size and page load speed does shipping a WASM-compiled .NET runtime to the browser have?
+Let's find out.
+ 
+ Using Chrome developer tools, I analyzed the network traffic created by visiting the website. I ran 5 page loads
+ ignoring cache (using Chrome's "Empty Cache and Hard Reload") and 5 normal page loads (with caches).
+ 
+ |               | Data Transferred | Resources |
+ | ------------- | ---------------- | --------- |
+ | Without Cache | 7.5 MB           | 17.7 MB   |
+ | With Cache    | 34.5 KB          | 17.7 MB   |
+ 
+ These results show that, at least with an application this small scale, the browser is able to cache about 99%
+ of the data it needs to download in order to run the application. Based on these numbers, the WASM .NET runtime
+ most likely clocks in somewhere around 7.25 MB when published for production.
+ 
+ Most users won't care about these numbers, though. Let's take a look at the numbers they will care about;
+ the time it takes to load the page.
+ 
+ "Load Time" is the time to get a response from the server.
+ 
+ "`DOMContentLoaded` Time" is the time for all HTML markup to be served, and the `DOMContentLoaded` Javascript event to be triggered.
+ 
+ "Finish Time" is the time for the page to be fully loaded and become interactive.
+ 
+ 
+ |               | Average Load Time (seconds) | Average `DOMContentLoaded` Time (seconds) | Average Finish Time (seconds) |
+ | ------------- | --------------------------- | ----------------------------------------- | ----------------------------- |
+ | Without Cache | 0.672                       | 0.6614                                    | 2.258                         |
+ | With Cache    | 0.391                       | 0.3798                                    | 1.682                         |
+ 
