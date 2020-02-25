@@ -822,7 +822,7 @@ namespace BlazorCMS.Client.Services
 }
 ```
 
-Let's build some components that we'll use to customize the nav bar. Let's start with a loading indicator, using [SpinKit](https://tobiasahlin.com/spinkit/).
+Let's build some components that we'll use to customize the nav bar, starting with a loading indicator, using [SpinKit](https://tobiasahlin.com/spinkit/).
 Choose your favorite variation and copy the markup and css into your project.
 
 `Loading.razor`
@@ -1633,7 +1633,14 @@ The create screen uses the same markup, but with slightly different initializati
 ```
 
 There you have basic create/read/update/delete functionality for Markdown content. There are a number of enhancements
-which are not outlined here, but you can find the full code [here](https://github.com/andCulture/BlazorCMS).
+which are not outlined here, including:
+- Refactoring the Javascript code into a node project using [Typescript](https://www.typescriptlang.org/) and
+bundled with [Parcel](https://parceljs.org/)
+- Creating C# wrapper classes for the JS Interop methods
+- Syntax highlighting in rendered markdown
+- Proper code editor for markdown using [CodeMirror](https://codemirror.net/)
+
+You can find the full code [here](https://github.com/andCulture/BlazorCMS).
 
 # Analytics
 
@@ -1676,7 +1683,7 @@ production-ready, it will likely be significantly more network-performant than i
 # Remarks
 As an engineer, the Blazor framework *feels* amazing to work with. Blazor gives you the ability to share code between the server
 and the client, without the baggage of having to use Javascript on the server (think [Node JS](https://nodejs.org/)) to achieve
-this. And, since you're running a **real, full .NET runtime in the browser,** you can use almost any C#/.NET libraries you may
+this. And, since you're running a **real, full .NET runtime in the browser,** you can use *almost* any C#/.NET libraries you may
 already be familiar with (since it's running in a browser, on top of the Javascript engine, certain OS APIs may not be usable,
 and most browsers run Javascript in a sandboxed environment for security reasons).
 
@@ -1689,4 +1696,5 @@ For example, I had to write some Javascript in order to focus an input on page (
 API for Javascript interop feels somewhat clunky to work with. I ended up creating a set of Javascript classes, and then creating
 C# classes which took an instance of the `JSRuntime` class in their constructors to build a C# binding directly to the Javascript
 functions, but this is a lot of manual work. These C# bindings could *easily* fall out of sync with the corresponding Javascript
-in a larger scale project.
+in a larger scale project. Perhaps a tool could be built to auto-generate such C# classes from Typescript interfaces, which would
+alleviate this.
