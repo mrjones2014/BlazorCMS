@@ -51,20 +51,9 @@ namespace BlazorCMS.Client.State
             _sidebarReference = menu;
         }
 
-        public void UpdateNavMenu()
-        {
-            _sidebarReference.Update();
-        }
-
-        public async Task UpdateNavMenuAndReloadData()
-        {
-            await _sidebarReference.UpdateAndReloadData();
-        }
-
         public void ShowSidebarCreateSectionForm()
         {
             _sidebarReference.OnSectionCreate();
-            _sidebarReference.Update();
         }
 
         #endregion Public Methods

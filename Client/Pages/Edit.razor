@@ -51,7 +51,6 @@
 
         IsLoading = false;
         this.StateHasChanged();
-        state.UpdateNavMenu();
     }
 
     private void OnCancel()
@@ -70,7 +69,6 @@
         state.SelectedArticleId = ArticleId;
         state.ExpandedSectionId = SectionId;
         Store.SetState(state);
-        await state.UpdateNavMenuAndReloadData();
 
         if (Article != null)
         {

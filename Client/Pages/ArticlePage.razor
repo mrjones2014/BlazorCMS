@@ -49,7 +49,6 @@
         var state               = Store.GetState<ClientState>();
         state.SelectedArticleId = ArticleId;
         Store.SetState(state);
-        await state.UpdateNavMenuAndReloadData();
         if (Article != null)
         {
             return;
@@ -70,7 +69,6 @@
         state.Articles               = state.Articles.AddRange(result.ResultObject?.ToList() ?? new List<ArticleDto>());
         state.SidebarLoadingArticles = false;
         Store.SetState(state);
-        state.UpdateNavMenu();
     }
 
 }

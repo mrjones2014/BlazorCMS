@@ -1639,6 +1639,7 @@ bundled with [Parcel](https://parceljs.org/)
 - Creating C# wrapper classes for the JS Interop methods
 - Syntax highlighting in rendered markdown
 - Proper code editor for markdown using [CodeMirror](https://codemirror.net/)
+- Refactored to remove the need for the `UpdatableComponent` class by using `NavigationManager.LocationChanged` event and parsing the route
 
 You can find the full code [here](https://github.com/andCulture/BlazorCMS).
 

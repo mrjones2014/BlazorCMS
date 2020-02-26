@@ -8,6 +8,7 @@ namespace BlazorCMS.Client
         void Focus(string selector);
         Task<bool> HasClass(string selector, string className);
         void ApplySyntaxHighlighting(string selector);
+        void UpdateActiveMenuItem(long articleId);
     }
 
     public class BlazorCmsJsUtils : IBlazorCmsJsUtils
@@ -17,6 +18,7 @@ namespace BlazorCMS.Client
             public static string Focus                   = methodName("focus");
             public static string HasClass                = methodName("hasClass");
             public static string ApplySyntaxHighlighting = methodName("applySyntaxHighlighting");
+            public static string UpdateActiveMenuItem    = methodName("updateActiveMenuItem");
 
             private static string methodName(string methodName) => $"BlazorCms.Utils.{methodName}";
         }
@@ -41,6 +43,11 @@ namespace BlazorCMS.Client
         public void ApplySyntaxHighlighting(string selector)
         {
             JsRuntime.InvokeVoidAsync(Methods.ApplySyntaxHighlighting, selector);
+        }
+
+        public void UpdateActiveMenuItem(long articleId)
+        {
+            JsRuntime.InvokeVoidAsync(Methods.UpdateActiveMenuItem, articleId);
         }
     }
 }

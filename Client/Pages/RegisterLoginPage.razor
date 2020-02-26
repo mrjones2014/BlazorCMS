@@ -159,7 +159,6 @@
         var state = Store.GetState<ClientState>();
         state.CurrentUser = currentUserResult.ResultObject;
         Store.SetState(state);
-        await state.UpdateNavMenuAndReloadData();
         NavigationManager.NavigateTo("/home");
     }
 
@@ -176,14 +175,12 @@
         {
             state.CurrentUser = currentUserResult.ResultObject;
             Store.SetState(state);
-            await state.UpdateNavMenuAndReloadData();
             NavigationManager.NavigateTo("/home");
             return;
         }
 
         // if not logged in, reset global state in case we were redirected here.
         state.Initialize();
-        state.UpdateNavMenu();
         Store.SetState(state);
         _loginChecked = true;
     }

@@ -1,8 +1,10 @@
 ﻿@using System.Collections.Immutable
+@using AndcultureCode.CSharp.Extensions
 @using BlazorCMS.Client.Services
 @using BlazorCMS.Client.State
 @using BlazorCMS.Shared.Dtos
-@inherits UpdatableComponent
+@using TypeSupport.Extensions
+@inherits BlazorState.BlazorStateComponent
 
 <div class="top-row pl-4 navbar navbar-dark">
     <span class="navbar-brand">BlazorCMS</span>
@@ -61,7 +63,7 @@
                                     {
                                         <li class="nav-item px-3">
                                             <ContextMenuTrigger MenuId="@SidebarContextMenu.GetMenuId(article.Id, SidebarContextMenu.SidebarContextMenuType.ARTICLE)">
-                                                <NavLink class="@GetNavItemClass(article.Id)" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
+                                                <NavLink class="nav-link" id="@($"nav-link-article-{article.Id}")" href="@($"/Section/{section.Id}/Article/{article.Id}")">
                                                     <span class="oi oi-justify-left" aria-hidden="true"></span>
                                                     <span>@article.Title</span>
                                                 </NavLink>
@@ -148,17 +150,6 @@
         }
     }
 
-    private string GetNavItemClass(long articleId)
-    {
-        var className = "nav-link";
-        if (Store.GetState<ClientState>().SelectedArticleId == articleId)
-        {
-            className += " active";
-        }
-
-        return className;
-    }
-
     private void OnSectionEdit(long sectionId)
     {
         _editingSectionId = sectionId;
@@ -168,6 +159,32 @@
     public void OnSectionCreate()
     {
         _showSectionCreate = true;
+        this.StateHasChanged();
+    }
+
+    private void OnRouteChange(object sender, LocationChangedEventArgs args)
+    {
+        var route = args.Location.Substring(NavigationManager.BaseUri.Length);
+        var routeParams = RouteParser.ParseRoute(route);
+        if (routeParams == null)
+        {
+            if (route.Contains("home"))
+            {
+                var sectionLoadResult = LoadSections().Result;
+                this.StateHasChanged();
+            }
+            return;
+        }
+
+        if (routeParams.SectionId > -1)
+        {
+            ExpandedSectionId = routeParams.SectionId;
+            if (ExpandedSectionArticles == null || ExpandedSectionArticles.IsEmpty())
+            {
+                var articleLoadResult = LoadArticlesForSections(ExpandedSectionId).Result;
+                this.StateHasChanged();
+            }
+        }
     }
 
     private async Task OnSectionCreateConfirm(long sectionId, string title)
@@ -261,14 +278,14 @@
         NavigationManager.NavigateTo($"/Section/{sectionId}/Create");
     }
 
-    private async Task LoadArticlesForSections(long sectionId)
+    private async Task<bool> LoadArticlesForSections(long sectionId)
     {
         // if clicked from the already expanded section, collapse it
         if (sectionId == ExpandedSectionId && ExpandedSectionArticles != null && ExpandedSectionArticles.Any())
         {
             ExpandedSectionId  = -1;
             IsLoadingArticles = false;
-            return;
+            return true;
         }
 
         ExpandedSectionId = sectionId;
@@ -278,14 +295,14 @@
         if (existingArticles != null && existingArticles.Any())
         {
             IsLoadingArticles = false;
-            return;
+            return true;
         }
 
         var result = await _articleService.Index(ExpandedSectionId);
         if (result.HasErrorsOrResultIsNull())
         {
             IsLoadingArticles = false;
-            return;
+            return true;
         }
 
         // update shared state
@@ -295,9 +312,10 @@
         Store.SetState(state);
         IsLoadingArticles = false;
         this.StateHasChanged();
+        return true;
     }
 
-    private async Task LoadSections()
+    private async Task<bool> LoadSections()
     {
         var result = await _sectionService.Index();
         var state = Store.GetState<ClientState>();
@@ -308,17 +326,13 @@
             await LoadArticlesForSections(ExpandedSectionId);
         }
         this.StateHasChanged();
+        return true;
     }
 
     protected override void OnInitialized()
     {
         Store.GetState<ClientState>().RegisterNavMenuComponent(this);
-    }
-
-    public override async Task UpdateAndReloadData()
-    {
-        await LoadSections();
-        this.StateHasChanged();
+        NavigationManager.LocationChanged += OnRouteChange;
     }
 
     protected override async Task OnInitializedAsync()

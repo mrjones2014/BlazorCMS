@@ -3,19 +3,19 @@ import './prism.css';
 import { IBlazorModule } from './IBlazorModule';
 
 interface IBlazorCmsFunctions {
-    focus: (selector: string) => void;
-    hasClass: (selector: string, className: string) => void;
+    focus:                   (selector: string) => void;
+    hasClass:                (selector: string, className: string) => void;
     applySyntaxHighlighting: (selector: string) => void;
 }
 
 const functions: IBlazorCmsFunctions = {
-    focus: function (selector) {
+    focus: (selector: string) => {
         const el: HTMLElement | null = document.querySelector(selector);
         if (el != null && el.focus != null) {
             el.focus();
         }
     },
-    hasClass: function (selector, className) {
+    hasClass: (selector: string, className: string) => {
         const el = document.querySelector(selector);
         if (el == null || el.classList == null) {
             return false;
@@ -23,7 +23,7 @@ const functions: IBlazorCmsFunctions = {
 
         return el.classList.contains(className);
     },
-    applySyntaxHighlighting: function (selector) {
+    applySyntaxHighlighting: (selector: string) => {
         if (selector == null) {
             // @ts-ignore
             Prism.highlightAll();

@@ -48,7 +48,6 @@
 
         IsLoading = false;
         this.StateHasChanged();
-        state.UpdateNavMenu();
     }
 
     private void OnCancel()
@@ -74,7 +73,6 @@
         state.Articles = state.Articles.AddRange(result.ResultObject?.ToList() ?? new List<ArticleDto>());
         state.SidebarLoadingArticles = false;
         Store.SetState(state);
-        state.UpdateNavMenu();
     }
 
     protected override void OnInitialized()
