@@ -35,7 +35,6 @@
         this.StateHasChanged();
         var result    = await _articleService.Post(article);
         var state     = Store.GetState<ClientState>();
-        state.ExpandedSectionId = SectionId;
         Store.SetState(state);
         if (!result.HasErrorsOrResultIsNull())
         {
@@ -66,8 +65,6 @@
     protected override async Task OnParametersSetAsync()
     {
         var state               = Store.GetState<ClientState>();
-        state.SelectedArticleId = ArticleId;
-        state.ExpandedSectionId = SectionId;
         Store.SetState(state);
 
         if (Article != null)
@@ -76,7 +73,6 @@
         }
 
         // populate all the articles for the section so the nav bar updates properly
-        state.ExpandedSectionId      = SectionId;
         state.SidebarLoadingArticles = true;
         var result                   = await _articleService.Index(SectionId);
 

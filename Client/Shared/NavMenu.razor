@@ -123,16 +123,7 @@
         }
     }
 
-    private long ExpandedSectionId
-    {
-        get => Store.GetState<ClientState>().ExpandedSectionId;
-        set
-        {
-            var state = Store.GetState<ClientState>();
-            state.ExpandedSectionId = value;
-            Store.SetState(state);
-        }
-    }
+    private long ExpandedSectionId { get; set; }
 
     private List<ArticleDto> ExpandedSectionArticles
     {
@@ -164,7 +155,11 @@
 
     private void OnRouteChange(object sender, LocationChangedEventArgs args)
     {
-        var route = args.Location.Substring(NavigationManager.BaseUri.Length);
+        RouteChangeUpdate(args.Location.Substring(NavigationManager.BaseUri.Length));
+    }
+
+    private void RouteChangeUpdate(string route)
+    {
         var routeParams = RouteParser.ParseRoute(route);
         if (routeParams == null)
         {
@@ -182,8 +177,8 @@
             if (ExpandedSectionArticles == null || ExpandedSectionArticles.IsEmpty())
             {
                 var articleLoadResult = LoadArticlesForSections(ExpandedSectionId).Result;
-                this.StateHasChanged();
             }
+            this.StateHasChanged();
         }
     }
 

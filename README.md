@@ -618,25 +618,9 @@ and [System.Collections.Immutable](https://www.nuget.org/packages/System.Collect
 `dotnet add package System.Collections.Immutable`
 
 Blazor is still in preview, so you may experience some issues, such as needing to call `this.StateHasChanged()` within a component to get it to
-re-render. For this reason, we need a way for other components to update the nav bar when a new section or article is created.
+re-render.
 
-Create a new abstract class in a new `State` directory:
-
-`UpdatableComponent.cs`
-```c#
-namespace BlazorCMS.Client.State
-{
-    public abstract class UpdatableComponent : BlazorStateComponent
-    {
-        public void Update()
-        {
-            this.StateHasChanged();
-        }
-    }
-}
-```
-
-Then create your state object in the same directory:
+Let's create a global state object in the `Client/State` directory.
 
 `ClientState.cs`
 ```c#
