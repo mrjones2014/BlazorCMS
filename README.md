@@ -646,7 +646,6 @@ namespace BlazorCMS.Client.State
             set => _sections = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        public long             ExpandedSectionId      { get; set; }
         public bool             SidebarLoadingArticles { get; set; }
 
         #endregion Properties
@@ -657,7 +656,6 @@ namespace BlazorCMS.Client.State
         {
             Sections               = ImmutableList<SectionDto>.Empty;
             Articles               = ImmutableList<ArticleDto>.Empty;
-            ExpandedSectionId      = -1;
             SidebarLoadingArticles = false;
         }
 
@@ -1098,16 +1096,7 @@ Now we can add the code for our `NavMenu.razor` component:
     private long _editingSectionId = -1;
     private bool _showSectionCreate = false;
 
-    private long ExpandedSectionId
-    {
-        get => Store.GetState<ClientState>().ExpandedSectionId;
-        set
-        {
-            var state = Store.GetState<ClientState>();
-            state.ExpandedSectionId = value;
-            Store.SetState(state);
-        }
-    }
+    private long ExpandedSectionId { get; set; }
 
     private List<ArticleDto> ExpandedSectionArticles
     {
@@ -1134,6 +1123,35 @@ Now we can add the code for our `NavMenu.razor` component:
     private void OnSectionCreate()
     {
         _showSectionCreate = true;
+    }
+
+    private void OnRouteChange(object sender, LocationChangedEventArgs args)
+    {
+        RouteChangeUpdate(args.Location.Substring(NavigationManager.BaseUri.Length));
+    }
+
+    private void RouteChangeUpdate(string route)
+    {
+        var routeParams = RouteParser.ParseRoute(route);
+        if (routeParams == null)
+        {
+            if (route.Contains("home"))
+            {
+                var sectionLoadResult = LoadSections().Result;
+                this.StateHasChanged();
+            }
+            return;
+        }
+
+        if (routeParams.SectionId > -1)
+        {
+            ExpandedSectionId = routeParams.SectionId;
+            if (ExpandedSectionArticles == null || ExpandedSectionArticles.IsEmpty())
+            {
+                var articleLoadResult = LoadArticlesForSections(ExpandedSectionId).Result;
+            }
+            this.StateHasChanged();
+        }
     }
 
     private async Task OnSectionCreateConfirm(long sectionId, string title)
@@ -1273,6 +1291,7 @@ Now we can add the code for our `NavMenu.razor` component:
     protected override void OnInitialized()
     {
         Store.GetState<ClientState>().RegisterNavMenuComponent(this);
+        NavigationManager.LocationChanged += OnRouteChange;
     }
 
     protected override async Task OnInitializedAsync()
@@ -1363,7 +1382,6 @@ Under the `Pages` directory, add `ArticlePage.razor`:
         {
             // populate all the articles for the section so the nav bar updates properly
             var state                    = Store.GetState<ClientState>();
-            state.ExpandedSectionId      = SectionId;
             state.SidebarLoadingArticles = true;
             Store.SetState(state);
             var result     = await _articleService.Index(SectionId);
@@ -1496,7 +1514,6 @@ And use this component to build our edit screen. In the `Pages` directory, add `
         IsLoading     = true;
         var result    = await _articleService.Post(article);
         var state     = Store.GetState<ClientState>();
-        state.ExpandedSectionId = SectionId;
         Store.SetState(state);
         if (!result.HasErrorsOrResultIsNull())
         {
@@ -1527,7 +1544,6 @@ And use this component to build our edit screen. In the `Pages` directory, add `
         {
             // populate all the articles for the section so the nav bar updates properly
             var state                    = Store.GetState<ClientState>();
-            state.ExpandedSectionId      = SectionId;
             state.SidebarLoadingArticles = true;
             var result                   = await _articleService.Index(SectionId);
             state.Articles               = state.Articles.Where(e => e.SectionId != SectionId).ToImmutableList();
@@ -1589,7 +1605,6 @@ The create screen uses the same markup, but with slightly different initializati
     {
         // populate all the articles for the section so the nav bar updates properly
         var state                    = Store.GetState<ClientState>();
-        state.ExpandedSectionId      = SectionId;
         state.SidebarLoadingArticles = true;
         Store.SetState(state);
         var result     = await _articleService.Index(SectionId);
@@ -1608,7 +1623,6 @@ The create screen uses the same markup, but with slightly different initializati
     protected override async Task OnParametersSetAsync()
     {
         var state = Store.GetState<ClientState>();
-        state.ExpandedSectionId = SectionId;
         Store.SetState(state);
         await PopulateArticlesForSection();
     }
