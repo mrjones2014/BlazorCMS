@@ -1698,3 +1698,12 @@ C# classes which took an instance of the `JSRuntime` class in their constructors
 functions, but this is a lot of manual work. These C# bindings could *easily* fall out of sync with the corresponding Javascript
 in a larger scale project. Perhaps a tool could be built to auto-generate such C# classes from Typescript interfaces, which would
 alleviate this.
+
+So the ultimate question is: is Blazor ready for large scale production applications?
+
+My opinion: not ***yet***. It's a fairly new technology, and it's still in preview, so it has it's fair share of quirks and bugs.
+However, the ability to share code between the server and client without having to use Javascript/Typescript on the server is
+an ***extremely*** valuable advantage. Blazor is very new, and it's already garnered a huge community around it (there's even an
+[Awesome Blazor](https://github.com/AdrienTorris/awesome-blazor) GitHub page for it); it will continue to mature and evolve and
+get better. I wouldn't use it for a production application quite yet, but it shows ***a lot*** of promise, and I'm excited to see
+what's next for Blazor.
