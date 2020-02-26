@@ -1,4 +1,5 @@
-import Prism            from 'prismjs';
+import './prism.js';
+import './prism.css';
 import { IBlazorModule } from './IBlazorModule';
 
 interface IBlazorCmsFunctions {
@@ -24,15 +25,19 @@ const functions: IBlazorCmsFunctions = {
     },
     applySyntaxHighlighting: function (selector) {
         if (selector == null) {
+            // @ts-ignore
             Prism.highlightAll();
             return;
         }
 
         const el = document.querySelector(selector);
         if (el == null) {
+            console.warn("BlazorCms.Utils.applySyntaxHighlighting: Attempted to highlight non-existent element.");
             return;
         }
 
+        console.log("BlazorCms.Utils.applySyntaxHighlighting");
+        // @ts-ignore
         Prism.highlightAllUnder(el);
     }
 };
