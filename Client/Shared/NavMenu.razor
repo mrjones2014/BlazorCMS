@@ -143,7 +143,8 @@
 
     public void OnLogout()
     {
-        CurrentUser = null;
+        CurrentUser       = null;
+        ExpandedSectionId = -1;
     }
 
     private void OnSectionEdit(long sectionId)
@@ -160,12 +161,9 @@
 
     private void OnRouteChange(object sender, LocationChangedEventArgs args)
     {
-        RouteChangeUpdate(args.Location.Substring(NavigationManager.BaseUri.Length));
-    }
-
-    private void RouteChangeUpdate(string route)
-    {
+        var route       = args.Location.Substring(NavigationManager.BaseUri.Length);
         var routeParams = RouteParser.ParseRoute(route);
+
         if (route == "home" && CurrentUser != null && (Sections == null || Sections.IsEmpty))
         {
             LoadSections();
@@ -182,8 +180,8 @@
             if (ExpandedSectionArticles == null || ExpandedSectionArticles.IsEmpty())
             {
                 var articleLoadResult = LoadArticlesForSections(ExpandedSectionId).Result;
+                this.StateHasChanged();
             }
-            this.StateHasChanged();
         }
     }
 
@@ -349,6 +347,12 @@
     {
         Store.GetState<ClientState>().RegisterNavMenuComponent(this);
         NavigationManager.LocationChanged += OnRouteChange;
+
+        var routeParams = RouteParser.ParseRoute(NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length));
+        if (routeParams != null && routeParams.SectionId > -1)
+        {
+            ExpandedSectionId = routeParams.SectionId;
+        }
     }
 
     protected override async Task OnInitializedAsync()
