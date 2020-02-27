@@ -1129,19 +1129,16 @@ Now we can add the code for our `NavMenu.razor` component:
 
     private void OnRouteChange(object sender, LocationChangedEventArgs args)
     {
-        RouteChangeUpdate(args.Location.Substring(NavigationManager.BaseUri.Length));
-    }
-
-    private void RouteChangeUpdate(string route)
-    {
+        var route       = args.Location.Substring(NavigationManager.BaseUri.Length);
         var routeParams = RouteParser.ParseRoute(route);
+
+        if (route == "home" && CurrentUser != null && (Sections == null || Sections.IsEmpty))
+        {
+            LoadSections();
+        }
+
         if (routeParams == null)
         {
-            if (route.Contains("home"))
-            {
-                var sectionLoadResult = LoadSections().Result;
-                this.StateHasChanged();
-            }
             return;
         }
 
@@ -1151,8 +1148,8 @@ Now we can add the code for our `NavMenu.razor` component:
             if (ExpandedSectionArticles == null || ExpandedSectionArticles.IsEmpty())
             {
                 var articleLoadResult = LoadArticlesForSections(ExpandedSectionId).Result;
+                this.StateHasChanged();
             }
-            this.StateHasChanged();
         }
     }
 
@@ -1294,6 +1291,12 @@ Now we can add the code for our `NavMenu.razor` component:
     {
         Store.GetState<ClientState>().RegisterNavMenuComponent(this);
         NavigationManager.LocationChanged += OnRouteChange;
+
+        var routeParams = RouteParser.ParseRoute(NavigationManager.Uri.Substring(NavigationManager.BaseUri.Length));
+        if (routeParams != null && routeParams.SectionId > -1)
+        {
+            ExpandedSectionId = routeParams.SectionId;
+        }
     }
 
     protected override async Task OnInitializedAsync()
@@ -1634,7 +1637,6 @@ bundled with [Parcel](https://parceljs.org/)
 - Creating C# wrapper classes for the JS Interop methods
 - Syntax highlighting in rendered markdown
 - Proper code editor for markdown using [CodeMirror](https://codemirror.net/)
-- Refactored to remove the need for the `UpdatableComponent` class by using `NavigationManager.LocationChanged` event and parsing the route
 
 You can find the full code [here](https://github.com/andCulture/BlazorCMS).
 
