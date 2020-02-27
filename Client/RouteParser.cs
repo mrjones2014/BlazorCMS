@@ -8,21 +8,21 @@ namespace BlazorCMS.Client
         public long ArticleId { get; set; }
     }
 
-    public class RouteParser
+    public static class RouteParser
     {
         public static RouteParams ParseRoute(string route)
         {
             try
             {
                 var parts      = route.Split("/");
-                var sectionIdx = findIndex(parts, "section");
+                var sectionIdx = FindIndex(parts, "section");
                 var sectionId  = -1L;
                 if (sectionIdx > -1)
                 {
                     long.TryParse(parts[sectionIdx + 1], out sectionId);
                 }
 
-                var articleIdx = findIndex(parts, "article");
+                var articleIdx = FindIndex(parts, "article");
                 var articleId  = -1L;
                 if (articleIdx > -1)
                 {
@@ -41,7 +41,7 @@ namespace BlazorCMS.Client
             }
         }
 
-        private static int findIndex(string[] parts, string query)
+        private static int FindIndex(string[] parts, string query)
         {
             for (var i = 0; i < parts.Length; i++)
             {
