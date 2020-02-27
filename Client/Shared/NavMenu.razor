@@ -141,6 +141,11 @@
         }
     }
 
+    public void OnLogout()
+    {
+        CurrentUser = null;
+    }
+
     private void OnSectionEdit(long sectionId)
     {
         _editingSectionId = sectionId;
@@ -161,13 +166,13 @@
     private void RouteChangeUpdate(string route)
     {
         var routeParams = RouteParser.ParseRoute(route);
+        if (route == "home" && CurrentUser != null && (Sections == null || Sections.IsEmpty))
+        {
+            LoadSections();
+        }
+
         if (routeParams == null)
         {
-            if (route.Contains("home"))
-            {
-                var sectionLoadResult = LoadSections().Result;
-                this.StateHasChanged();
-            }
             return;
         }
 
@@ -210,7 +215,7 @@
 
     private async Task OnArticleDelete(long articleId)
     {
-        _isLoadingAll = true;
+        _isLoadingAll      = true;
         var shouldRedirect = await JsUtils.HasClass($"#nav-link-article-{articleId}", "active");
         var state          = Store.GetState<ClientState>();
         var article        = state.Articles.First(e => e.Id == articleId);
@@ -231,10 +236,10 @@
     private async Task OnSectionEditConfirm(long sectionId, string title)
     {
         _isLoadingAll = true;
-        var state = Store.GetState<ClientState>();
-        var section = state.Sections.First(e => e.Id == sectionId);
-        section.Name = title;
-        var result = await _sectionService.Edit(section);
+        var state     = Store.GetState<ClientState>();
+        var section   = state.Sections.First(e => e.Id == sectionId);
+        section.Name  = title;
+        var result    = await _sectionService.Edit(section);
         if (result.ResultObject)
         {
             state.Sections = state.Sections.Where(e => e.Id != sectionId).ToImmutableList();
@@ -252,7 +257,7 @@
         var result    = await _sectionService.Delete(sectionId);
         if (result.ResultObject)
         {
-            var state = Store.GetState<ClientState>();
+            var state      = Store.GetState<ClientState>();
             state.Articles = state.Articles?.Where(e => e.SectionId != sectionId)?.ToImmutableList() ?? ImmutableList<ArticleDto>.Empty;
             state.Sections = state.Sections?.Where(e => e.Id != sectionId)?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
             Store.SetState(state);
@@ -266,7 +271,16 @@
         collapseNavMenu = !collapseNavMenu;
     }
 
-    private ImmutableList<SectionDto> Sections => Store.GetState<ClientState>().Sections;
+    private ImmutableList<SectionDto> Sections
+    {
+        get => Store.GetState<ClientState>().Sections;
+        set
+        {
+            var state = Store.GetState<ClientState>();
+            state.Sections = value;
+            Store.SetState(state);
+        }
+    }
 
     private void Create(long sectionId)
     {
@@ -312,8 +326,15 @@
 
     private async Task<bool> LoadSections()
     {
-        var result = await _sectionService.Index();
         var state = Store.GetState<ClientState>();
+        if (CurrentUser == null)
+        {
+            state.Initialize();
+            Store.SetState(state);
+            this.StateHasChanged();
+            return false;
+        }
+        var result = await _sectionService.Index();
         state.Sections = result.ResultObject?.ToImmutableList() ?? ImmutableList<SectionDto>.Empty;
         Store.SetState(state);
         if (ExpandedSectionId > 0)
