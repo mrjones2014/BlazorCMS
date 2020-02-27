@@ -39,7 +39,7 @@
         pipeline: MarkdownPipeline
     );
 
-    protected override async void OnAfterRender(bool firstRender)
+    protected override void OnAfterRender(bool firstRender)
     {
         JsUtils.ApplySyntaxHighlighting($"#{Id}");
         base.OnAfterRender(firstRender);

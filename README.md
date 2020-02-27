@@ -646,7 +646,8 @@ namespace BlazorCMS.Client.State
             set => _sections = value.OrderBy(e => e.Id).ToImmutableList();
         }
 
-        public bool             SidebarLoadingArticles { get; set; }
+        public bool    SidebarLoadingArticles { get; set; }
+        public UserDto CurrentUser            { get; set; }
 
         #endregion Properties
 
@@ -657,6 +658,7 @@ namespace BlazorCMS.Client.State
             Sections               = ImmutableList<SectionDto>.Empty;
             Articles               = ImmutableList<ArticleDto>.Empty;
             SidebarLoadingArticles = false;
+            CurrentUser            = null;
         }
 
         public void RegisterNavMenuComponent(NavMenu menu)
@@ -664,9 +666,9 @@ namespace BlazorCMS.Client.State
             _sidebarReference = menu;
         }
 
-        public void UpdateNavMenu()
+        public void ShowSidebarCreateSectionForm()
         {
-            _sidebarReference.Update();
+            _sidebarReference.OnSectionCreate();
         }
 
         #endregion Public Methods
@@ -1389,7 +1391,6 @@ Under the `Pages` directory, add `ArticlePage.razor`:
             state.Articles = state.Articles.AddRange(result.ResultObject);
             state.SidebarLoadingArticles = false;
             Store.SetState(state);
-            state.UpdateNavMenu();
         }
     }
 
@@ -1524,8 +1525,6 @@ And use this component to build our edit screen. In the `Pages` directory, add `
         }
 
         IsLoading = false;
-
-        state.UpdateNavMenu();
     }
 
     private void OnCancel()
@@ -1593,7 +1592,6 @@ The create screen uses the same markup, but with slightly different initializati
         }
 
         IsLoading = false;
-        state.UpdateNavMenu();
     }
 
     private void OnCancel()
@@ -1612,7 +1610,6 @@ The create screen uses the same markup, but with slightly different initializati
         state.Articles = state.Articles.AddRange(result.ResultObject);
         state.SidebarLoadingArticles = false;
         Store.SetState(state);
-        state.UpdateNavMenu();
     }
 
     protected override void OnInitialized()

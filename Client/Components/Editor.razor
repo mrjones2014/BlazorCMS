@@ -11,10 +11,6 @@
                 <BSTabLabel>Edit</BSTabLabel>
                 <BSTabContent>
                     <CodeMirror InitialContent="@(InitialContent?.Body)" OnContentChanged="@OnContentChanged"/>
-                    @* <textarea *@
-                    @*     class="editor-textarea form-control" *@
-                    @*     @bind-value="@Content.Body" *@
-                    @*     @bind-value:event="oninput"></textarea> *@
                     <div class="editor-footer">
                         <button type="button" class="btn btn-primary" disabled="@IsLoading" @onclick="@OnSaveCallback">
                             @if (IsLoading)
