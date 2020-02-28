@@ -4,19 +4,19 @@
 There are two different variations of Blazor; Blazor-Server, in which C# processing is performed on the server and the results
 are sent to the client via a websocket connection, or Blazor-Wasm, which actually ships a full WebAssembly .NET runtime to the browser. 
 
-Let's build a (very) simple CMS using Blazor-Wasm, with a .NET Core hosted backend. Or, you can skip to the [analytics](#analytics);
+Let's build a (very) simple CMS using Blazor-Wasm, with a .NET Core hosted backend. Or, you can skip to the [analytics](#analytics).
 
 All of the code related to this article can be found [here](https://github.com/andCulture/BlazorCMS).
 
 Note: `using` import statements are omitted here for brevity.
 
-To start, you will need to install the [dotnet 3.1.0-preview4 CLI](https://dotnet.microsoft.com/download/dotnet-core/3.1).
+You will need to install the [dotnet 3.1.0-preview4 CLI](https://dotnet.microsoft.com/download/dotnet-core/3.1) to set up and build this project.
 
 Start by installing the Blazor project templates into the dotnet CLI.
 
 `dotnet new -i Microsoft.AspNetCore.Blazor.Templates::3.1.0-preview4.19579.2`
 
-Now that we have the project templates installed, let's create a new Blazor WASM Dotnet Core hosted project.
+Now that we have the project templates installed, let's create a new Blazor-Wasm Dotnet Core hosted project.
 
 `dotnet new blazorwasm --hosted -o BlazorCMS`
 
@@ -26,7 +26,7 @@ of your `Client.csproj` file as a workaround. Remember, Blazor is still in previ
 
 Let's add some data. For this, we'll use Entity Framework Core with a Sqlite database. Add the package to your `Server` project.
 
-`dotnet add package Microsoft.EntityFrameworkCore.Sqlite`;
+`dotnet add package Microsoft.EntityFrameworkCore.Sqlite`
 
 Let's add some models. In this project, we'll have `Section`s and `Article`s. Add these models in the `Server` project under a `Data/Models` directory.
 We'll also use an andculture open-source project, [AndcultureCode.CSharp.Conductors](https://github.com/AndcultureCode/AndcultureCode.CSharp.Conductors), in this project:
@@ -109,9 +109,9 @@ namespace BlazorCMS.Server.Data
 Now add your `BlazorCmsContext` to dependency injection and configure the data source. In `Startup.cs` in the `ConfigureServices` method,
 add the following line:
 
-`services.AddDbContext<BlazorCmsContext>(options => options.UseSqlite("Data Source=BlazorCMS.db"));`;
+`services.AddDbContext<BlazorCmsContext>(options => options.UseSqlite("Data Source=BlazorCMS.db"));`
 
-Let's install the dotnet Entity Framework CLI: `dotnet tool install --global dotnet-ef`.
+Let's install the dotnet Entity Framework CLI: `dotnet tool install --global dotnet-ef`
 We will also need the `Microsoft.EntityFrameworkCore.Design` package for the CLI to work in this project.
 
 `dotnet add package Microsoft.EntityFrameworkCore.Design`
@@ -143,8 +143,6 @@ Alright, now let's get some conductors for each of our entities into dependency 
 add the following lines:
 
 ```c#
-
-
 services.AddScoped<IRepositoryCreateConductor<Section>, RepositoryCreateConductor<Section>>();
 services.AddScoped<IRepositoryReadConductor<Section>,   RepositoryReadConductor<Section>>();
 services.AddScoped<IRepositoryUpdateConductor<Section>, RepositoryUpdateConductor<Section>>();
@@ -158,8 +156,6 @@ services.AddScoped<IRepositoryDeleteConductor<Article>, RepositoryDeleteConducto
 
 For our controllers, we'll need DTOs (Data Transfer Objects) to send our models to the client. Add these in the `Shared` project
 so that they can be used directly on the client as well. Add your DTOs under a `Dtos` directory.
-
-Now let's build a controller for each of our entities. Add your controllers in the `Server` project, under the `Controllers` directory.
 
 `EntityDto.cs`
 ```c#
@@ -212,7 +208,8 @@ IMapper mapper = autoMapperConfig.CreateMapper();
 services.AddSingleton<IMapper>(mapper);
 ```
 
-Now that `AutoMapper` is set up, we can use it in the controllers we'll add under `Server/Controllers`:
+Now that `AutoMapper` is set up, we can use it in the controllers we'll build. We'll need a controller for each of our entities.
+Add your controllers in the `Server` project, under the `Controllers` directory.
 
 `BaseController.cs`
 ```c#
@@ -398,7 +395,6 @@ namespace BlazorCMS.Server.Controllers
         #endregion DELETE
     }
 }
-
 ```
 
 `ArticlesController.cs`
@@ -1700,6 +1696,7 @@ bundled with [Parcel](https://parceljs.org/)
 - Creating C# wrapper classes for the JS Interop methods
 - Syntax highlighting in rendered markdown
 - Proper code editor for markdown using [CodeMirror](https://codemirror.net/)
+- Added user authentication and access control using [Identity Framework](https://docs.microsoft.com/en-us/aspnet/core/security/authentication/identity?view=aspnetcore-3.1&tabs=netcore-cli)
 
 You can find the full code [here](https://github.com/andCulture/BlazorCMS).
 
