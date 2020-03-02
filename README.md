@@ -1542,7 +1542,6 @@ Now we can use the `BSTabs` components to create a markdown editor with a previe
     }
 
 }
-
 ```
 
 And use this component to build our edit screen. In the `Pages` directory, add `Edit.razor`:
@@ -1713,7 +1712,7 @@ ignoring cache (using Chrome's "Empty Cache and Hard Reload") and 5 normal page 
 | Without Cache | 7.5 MB           | 17.7 MB   |
 | With Cache    | 34.5 KB          | 17.7 MB   |
 
-These results show that, at least with an application this small scale, the browser is able to cache about 99%
+These results show that, at least with an application this small scale, the browser is able to cache over 99%
 of the data it needs ([including the framework assemblies themselves](https://github.com/dotnet/aspnetcore/issues/18448))
 to download in order to run the application. Based on these numbers, the WASM .NET runtime most likely clocks
 in somewhere around 7.25 MB when published for production.
