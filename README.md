@@ -119,6 +119,8 @@ We will also need the `Microsoft.EntityFrameworkCore.Design` package for the CLI
 Now we can create our initial database migration. Note that you should **always** double-check your migrations to avoid losing data.
 This should be a simple migration that creates your `Articles` and `Sections` tables, and creates a foreign key relationship from `Articles` to `Sections`.
 
+`dotnet ef migrations add InitialCreate`
+
 Let's now configure our application to automatically run migrations on startup. Add the following snippet to the `Startup.Configure` method:
 
 ```c#
