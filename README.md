@@ -4,11 +4,15 @@
 There are two different variations of Blazor; Blazor-Server, in which C# processing is performed on the server and the results
 are sent to the client via a websocket connection, or Blazor-Wasm, which actually ships a full WebAssembly .NET runtime to the browser. 
 
+> **(KOSER)** - Considering adding more detail about why Blazor exists. What problem is it trying to solve? What is the benefit of WebAssembly over Javascript?
+
 Let's build a (very) simple CMS using Blazor-Wasm, with a .NET Core hosted backend. Or, you can skip to the [analytics](#analytics).
+> **(KOSER)** - Add an explanation of what the purpose of the sample app is? What will it do. What aspects of WebAssembly will it demonstrate?
 
 All of the code related to this article can be found [here](https://github.com/andCulture/BlazorCMS).
 
 Note: `using` import statements are omitted here for brevity.
+> **(KOSER)** - Consider creating sections to help break up the content (e.g. Setup, Models, DB Connectivity, etc.)
 
 You will need to install the [dotnet 3.1.0-preview4 CLI](https://dotnet.microsoft.com/download/dotnet-core/3.1) to set up and build this project.
 
@@ -32,6 +36,7 @@ Let's add some models. In this project, we'll have `Section`s and `Article`s. Ad
 We'll also use an andculture open-source project, [AndcultureCode.CSharp.Conductors](https://github.com/AndcultureCode/AndcultureCode.CSharp.Conductors), in this project:
 
 `dotnet add package AndcultureCode.CSharp.Conductors` 
+> **(KOSER)** - Consider adding an explanation on why you're using the open-source andculture stuff. You and I know, but others may not know what these packages are going to give us.
 
 `Section.cs`
 ```c#
@@ -143,7 +148,7 @@ services.AddScoped<IRepository<Article>, Repository<Article>>();
 
 Alright, now let's get some conductors for each of our entities into dependency injection. In `Startup.cs`, in the `ConfigureServices` method,
 add the following lines:
-
+> **(KOSER)** - Consider adding an explanation as to why you're creating these conductors. That way people can get a clearer picture of what the purpose is behind creating them.
 ```c#
 services.AddScoped<IRepositoryCreateConductor<Section>, RepositoryCreateConductor<Section>>();
 services.AddScoped<IRepositoryReadConductor<Section>,   RepositoryReadConductor<Section>>();
@@ -261,7 +266,9 @@ namespace BlazorCMS.Server.Controllers
         #endregion Public Utility Methods
     }
 }
+
 ```
+> **(KOSER)** - Consider adding an explanation of what this controller will do.
 
 `SectionsController.cs`
 ```c#
@@ -398,6 +405,7 @@ namespace BlazorCMS.Server.Controllers
     }
 }
 ```
+> **(KOSER)** - Consider adding an explanation of what this controller will do.
 
 `ArticlesController.cs`
 ```c#
@@ -606,6 +614,8 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 Now, you should be able to run the app (`dotnet run` in the `Server` directory), and navigate to `http://localhost:5000/api/sections` and see a JSON response
 containing our seeded `Section`. Now that our API is done, we can start building the frontend.
 
+> **(KOSER)** - Consider adding an explanation for what each of these packages will do for us.
+
 Let's add the [Blazor-State](https://timewarpengineering.github.io/blazor-state/), [Blazor.ContextMenu](https://github.com/stavroskasidis/BlazorContextMenu),
 and [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) packages to the `Client` project.
 
@@ -675,6 +685,8 @@ namespace BlazorCMS.Client.State
 ```
 
 Now we'll need to add client-side services to use our API. Create your services in a `Services` directory.
+
+> **(KOSER)** - Consider adding an explanation of what these services classes do.
 
 `Service.cs`
 ```c#
@@ -1371,6 +1383,8 @@ Now we can add the code for our `NavMenu.razor` component:
 ```
 
 Writing Blazor components is extremely similar to writing regular old C# code!
+
+> **(KOSER)** - Consider highlighting some of the syntax that is unique to Blazor (for example some of the DI stuff, custom attributes/decorators, component lifecylce methods, etc.)
 
 Now we can work on creating/editing articles. Let's start with a generic markdown component. For this we'll use the
 [MarkDig](https://github.com/lunet-io/markdig) package:
