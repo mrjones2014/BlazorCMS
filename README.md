@@ -4,6 +4,15 @@
 There are two different variations of Blazor; Blazor-Server, in which C# processing is performed on the server and the results
 are sent to the client via a websocket connection, or Blazor-Wasm, which actually ships a full WebAssembly .NET runtime to the browser.
 
+# Table of Contents
+- [What is Web Assembly](#what-is-web-assembly)
+- [What is Blazor and Why Does it Exist?](#what-is-blazor-and-why-does-it-exist-)
+- [Using Blazor](#using-blazor)
+- [Setup](#setup)
+- [Creating Domain Entities](#creating-domain-entities)
+- [Analytics](#analytics)
+- [Remarks](#remarks)
+
 ## What is Web Assembly
 Technically, web assembly is just a small subset of the Javascript language. Specifically, it's the subset of Javascript that can be just-in-time
 compiled to machine code. What this means is that web assembly can run directly on your hardware, almost as though it were a binary written in
