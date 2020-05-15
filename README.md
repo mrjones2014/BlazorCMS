@@ -2,17 +2,37 @@
 
 [Blazor](https://dotnet.microsoft.com/apps/aspnet/web-apps/blazor) is a framework for building client-side applications with C#.
 There are two different variations of Blazor; Blazor-Server, in which C# processing is performed on the server and the results
-are sent to the client via a websocket connection, or Blazor-Wasm, which actually ships a full WebAssembly .NET runtime to the browser. 
+are sent to the client via a websocket connection, or Blazor-Wasm, which actually ships a full WebAssembly .NET runtime to the browser.
 
-> **(KOSER)** - Considering adding more detail about why Blazor exists. What problem is it trying to solve? What is the benefit of WebAssembly over Javascript?
+## What is Web Assembly
+Technically, web assembly is just a small subset of the Javascript language. Specifically, it's the subset of Javascript that can be just-in-time
+compiled to machine code. What this means is that web assembly can run directly on your hardware, almost as though it were a binary written in
+C++ or similar. This makes it **way** faster than interpreted Javascript (i.e. the rest of Javascript that can't be just-in-time compiled to 
+machine code). It also means you can write compilers that will compile other languages to web assembly without a huge performance boon.
+
+## What is Blazor and Why Does it Exist?
+Blazor is a C#/.NET runtime, compiled to web assembly so that it can be run in a browser (or, technically, it can run in a Node.js environment, too).
+Blazor allows developers to use a single language across the whole web stack, and even share code between the server and client components of the 
+application. Using something like Node.js achieves the same result, but then you are locked into using Javascript (or Typescript). Blazor allows
+you to get the same benefit using C# instead of Javascript/Typescript. This allows you to get excellent compile-time errors and warnings,
+use static code analysis tools designed for C#/.NET, and use language features in C# that simply don't exist in Javascript/Typescript, like
+extension methods, for example. With Blazor, the C# runtime is compiled to web assembly, and your C# code is compiled normally; then, you
+run *real .NET assemblies in the browser, on the WASM .NET runtime!*
+
+tl;dr: Blazor exists because C# is an excellent language and Javascript is a terribly designed language.
+
+## Using Blazor
 
 Let's build a (very) simple CMS using Blazor-Wasm, with a .NET Core hosted backend. Or, you can skip to the [analytics](#analytics).
-> **(KOSER)** - Add an explanation of what the purpose of the sample app is? What will it do. What aspects of WebAssembly will it demonstrate?
+
+BlazorCMS will use a .NET Core hosted backend to deploy a Blazor client app. It will demonstrate the ability to share C# code between the
+server and client components of the app, and running real C# assemblies on the WASM .NET runtime in your browser.
 
 All of the code related to this article can be found [here](https://github.com/andCulture/BlazorCMS).
 
 Note: `using` import statements are omitted here for brevity.
-> **(KOSER)** - Consider creating sections to help break up the content (e.g. Setup, Models, DB Connectivity, etc.)
+
+## Setup
 
 You will need to install the [dotnet 3.1.0-preview4 CLI](https://dotnet.microsoft.com/download/dotnet-core/3.1) to set up and build this project.
 
@@ -32,11 +52,15 @@ Let's add some data. For this, we'll use Entity Framework Core with a Sqlite dat
 
 `dotnet add package Microsoft.EntityFrameworkCore.Sqlite`
 
+## Creating Domain Entities
+
 Let's add some models. In this project, we'll have `Section`s and `Article`s. Add these models in the `Server` project under a `Data/Models` directory.
 We'll also use an andculture open-source project, [AndcultureCode.CSharp.Conductors](https://github.com/AndcultureCode/AndcultureCode.CSharp.Conductors), in this project:
 
 `dotnet add package AndcultureCode.CSharp.Conductors` 
-> **(KOSER)** - Consider adding an explanation on why you're using the open-source andculture stuff. You and I know, but others may not know what these packages are going to give us.
+
+The `AndcultureCode.CSharp.Conductors` package will help us get our create/read/update/delete functionality for our entities implemented
+with ***extremely*** minimal boilerplate code.
 
 `Section.cs`
 ```c#
@@ -148,7 +172,7 @@ services.AddScoped<IRepository<Article>, Repository<Article>>();
 
 Alright, now let's get some conductors for each of our entities into dependency injection. In `Startup.cs`, in the `ConfigureServices` method,
 add the following lines:
-> **(KOSER)** - Consider adding an explanation as to why you're creating these conductors. That way people can get a clearer picture of what the purpose is behind creating them.
+
 ```c#
 services.AddScoped<IRepositoryCreateConductor<Section>, RepositoryCreateConductor<Section>>();
 services.AddScoped<IRepositoryReadConductor<Section>,   RepositoryReadConductor<Section>>();
@@ -160,6 +184,9 @@ services.AddScoped<IRepositoryReadConductor<Article>,   RepositoryReadConductor<
 services.AddScoped<IRepositoryUpdateConductor<Article>, RepositoryUpdateConductor<Article>>();
 services.AddScoped<IRepositoryDeleteConductor<Article>, RepositoryDeleteConductor<Article>>();
 ```
+
+These conductors will provide our create/read/update/delete functionality for our entities. Now, all we have to do to create/read/update/delete
+entities is use .NET dependency injection to get an instance of these conductors into our controllers.
 
 For our controllers, we'll need DTOs (Data Transfer Objects) to send our models to the client. Add these in the `Shared` project
 so that they can be used directly on the client as well. Add your DTOs under a `Dtos` directory.
@@ -268,7 +295,8 @@ namespace BlazorCMS.Server.Controllers
 }
 
 ```
-> **(KOSER)** - Consider adding an explanation of what this controller will do.
+
+Now, create a `SectionsController` to implement a create/read/update/delete HTTP API for our `Section` entity.
 
 `SectionsController.cs`
 ```c#
@@ -405,7 +433,8 @@ namespace BlazorCMS.Server.Controllers
     }
 }
 ```
-> **(KOSER)** - Consider adding an explanation of what this controller will do.
+
+Same for `ArticlesController`. It will implement create/read/update/delete for `Article`s as an HTTP API.
 
 `ArticlesController.cs`
 ```c#
@@ -614,10 +643,14 @@ public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 Now, you should be able to run the app (`dotnet run` in the `Server` directory), and navigate to `http://localhost:5000/api/sections` and see a JSON response
 containing our seeded `Section`. Now that our API is done, we can start building the frontend.
 
-> **(KOSER)** - Consider adding an explanation for what each of these packages will do for us.
 
 Let's add the [Blazor-State](https://timewarpengineering.github.io/blazor-state/), [Blazor.ContextMenu](https://github.com/stavroskasidis/BlazorContextMenu),
 and [System.Collections.Immutable](https://www.nuget.org/packages/System.Collections.Immutable/) packages to the `Client` project.
+
+`Blazor-State` will help us manage global client application state, `Blazor.ContextMenu` provides a right-click context menu as a pre-packaged
+Blazor component, and `System.Collections.Immutable` will help our state update properly by changing the *reference* to state values instead of
+updating in-place, especially for state values which are collections. This is a common problem in most reactive web frameworks, including
+React, Angular, and Vue.js, and it's why [Immutable.js](https://immutable-js.github.io/immutable-js/) exists.
 
 `dotnet add package Blazor-State`
 
@@ -684,9 +717,8 @@ namespace BlazorCMS.Client.State
 }
 ```
 
-Now we'll need to add client-side services to use our API. Create your services in a `Services` directory.
-
-> **(KOSER)** - Consider adding an explanation of what these services classes do.
+Now we'll need to add client-side services to use our API. Create your services in a `Services` directory. The services will provide
+an interface on the client to interact with our server API that we created by building a controller for each of our entities.
 
 `Service.cs`
 ```c#
@@ -1382,9 +1414,15 @@ Now we can add the code for our `NavMenu.razor` component:
 }
 ```
 
-Writing Blazor components is extremely similar to writing regular old C# code!
-
-> **(KOSER)** - Consider highlighting some of the syntax that is unique to Blazor (for example some of the DI stuff, custom attributes/decorators, component lifecylce methods, etc.)
+Writing Blazor components is extremely similar to writing regular old C# code! The main syntax difference between Blazor and traditional
+server-side C# code include:
+- Dependency injection; since Blazor components don't have a traditional constructor, dependency injection is performed via attributes
+(`[Inject]`) instead of via the constructor.
+- The class construct syntax; instead of surrounding your code in a traditional `namespace BlazorCms.Server.MyNamespace {}` and
+`public class MyClass {}` syntax, you simply surround your code with a `@code {}` block, add your namespace via the `@namspace` directive and
+using statements via the `@using` directive at the top of the file, and it's compiled to a normal class behind-the-scenes at compile-time.
+- Heavier emphasis on callback-based development; in other contexts in C#, you can simply use `async` methods and `await` for them, but since
+Blazor is focused on user interactivity via UI, a lot of this is replaced with, for example, `OnClick`, `OnInitialized`, etc. callback methods.
 
 Now we can work on creating/editing articles. Let's start with a generic markdown component. For this we'll use the
 [MarkDig](https://github.com/lunet-io/markdig) package:
