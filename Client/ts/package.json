@@ -9,7 +9,7 @@
   "license": "ISC",
   "devDependencies": {
     "@types/codemirror": "0.0.84",
-    "codemirror": "5.51.0",
+    "codemirror": "5.58.2",
     "css-loader": "3.4.2",
     "file-loader": "5.0.2",
     "parcel": "1.12.4",
